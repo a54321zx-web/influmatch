@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>기업 대시보드 — InfluMatch</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--navy:#1B3A2D;--red:#2D6A4F;--gold:#B7935A;--green:#2D6A4F;--danger:#C0392B;--bg:#F7FAF8;--card:#FFFFFF;--border:#D8EDE3;--text:#111111;--muted:#777777}
+  body{font-family:'Segoe UI',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+  nav{background:var(--card);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;height:60px;gap:24px}
+  .logo{font-size:18px;font-weight:700;color:var(--navy);text-decoration:none}.logo span{color:var(--green)}
+  nav a{color:var(--muted);text-decoration:none;font-size:14px}
+  nav a:hover{color:var(--text)}
+  .company-badge{margin-left:auto;font-size:13px;color:var(--navy);font-weight:600}
+  .btn-logout{background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;margin-left:12px}
+
+  .page{max-width:1100px;margin:0 auto;padding:32px}
+
+  /* 상단 통계 */
+  .stat-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px}
+  .stat-card .label{font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:600;text-transform:uppercase}
+  .stat-card .value{font-size:26px;font-weight:700;color:var(--text)}
+  .stat-card .sub{font-size:11px;color:var(--muted);margin-top:4px}
+
+  /* 탭 */
+  .tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:24px}
+  .tab{padding:12px 24px;cursor:pointer;font-size:14px;color:var(--muted);border-bottom:3px solid transparent;transition:all 0.2s}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--green);border-bottom-color:var(--green);font-weight:600}
+
+  /* 의뢰 등록 폼 */
+  .request-form{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;margin-bottom:24px}
+  .request-form h2{font-size:16px;font-weight:700;color:var(--text);margin-bottom:20px}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .form-group{margin-bottom:0}
+  .form-group.full{grid-column:1/-1}
+  .form-group label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase}
+  .form-group input,.form-group select,.form-group textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:10px 13px;border-radius:8px;font-size:13px;outline:none;font-family:inherit;transition:border-color 0.2s}
+  .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--green)}
+  .btn-submit{background:var(--green);color:#fff;border:none;padding:11px 28px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;margin-top:16px;transition:background 0.2s}
+  .btn-submit:hover{background:var(--navy)}
+
+  /* 의뢰 목록 */
+  .request-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:12px;display:flex;align-items:center;gap:16px}
+  .req-info{flex:1}
+  .req-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px}
+  .req-meta{font-size:12px;color:var(--muted);display:flex;gap:12px}
+  .req-status{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600}
+  .status-open{background:#E8F3ED;color:#2D6A4F}
+  .status-closed{background:#F5F5F5;color:#888}
+
+  /* 인플루언서 검색 */
+  .search-bar{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+  .search-bar select{background:var(--card);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-size:13px;outline:none}
+  .search-bar select:focus{border-color:var(--green)}
+  .btn-search{background:var(--green);color:#fff;border:none;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+
+  .inf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+  .inf-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;transition:border-color 0.2s,transform 0.2s;cursor:pointer}
+  .inf-card:hover{border-color:var(--green);transform:translateY(-2px)}
+  .inf-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .avatar{width:44px;height:44px;border-radius:50%;background:#E8F3ED;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:var(--green);flex-shrink:0}
+  .inf-name{font-size:14px;font-weight:600;color:var(--text)}
+  .inf-handle{font-size:11px;color:var(--muted)}
+  .grade-dot{margin-left:auto;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+  .inf-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+  .stat{background:var(--bg);border-radius:6px;padding:7px 9px}
+  .stat .sv{font-size:14px;font-weight:700;color:var(--text)}
+  .stat .sl{font-size:10px;color:var(--muted)}
+  .inf-footer{display:flex;justify-content:space-between;align-items:center}
+  .cat-badge{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600}
+  .inf-price{font-size:12px;font-weight:600;color:var(--text)}
+
+  .empty{text-align:center;padding:60px;color:var(--muted)}
+  .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite;margin:40px auto}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .panel{display:none}.panel.active{display:block}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="logo">InfluMatch<span>.</span></a>
+  <a href="/company/dashboard" style="color:var(--green);font-weight:600">대시보드</a>
+  <a href="/marketplace">인플루언서 탐색</a>
+  <span class="company-badge" id="companyName">—</span>
+  <button class="btn-logout" onclick="logout()">로그아웃</button>
+</nav>
+
+<div class="page">
+
+  <!-- 통계 카드 -->
+  <div class="stat-cards">
+    <div class="stat-card">
+      <div class="label">등록 의뢰</div>
+      <div class="value" id="sTotalReq">0</div>
+      <div class="sub">건</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">진행 중</div>
+      <div class="value" id="sOpenReq">0</div>
+      <div class="sub">건</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">검색 가능 인플루언서</div>
+      <div class="value" id="sTotalInf">—</div>
+      <div class="sub">명</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">평균 신뢰도</div>
+      <div class="value" id="sAvgScore">—</div>
+      <div class="sub">점</div>
+    </div>
+  </div>
+
+  <!-- 탭 -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('search',this)">인플루언서 검색</div>
+    <div class="tab" onclick="switchTab('request',this)">광고 의뢰 등록</div>
+    <div class="tab" onclick="switchTab('myreqs',this)">내 의뢰 목록</div>
+  </div>
+
+  <!-- 인플루언서 검색 -->
+  <div class="panel active" id="panel-search">
+    <div class="search-bar">
+      <select id="fCat">
+        <option value="">카테고리 전체</option>
+        <option value="뷰티">뷰티</option><option value="패션">패션</option>
+        <option value="음식">음식</option><option value="여행">여행</option>
+        <option value="육아">육아</option><option value="운동">운동</option>
+        <option value="게임">게임</option><option value="IT/테크">IT/테크</option>
+        <option value="반려동물">반려동물</option><option value="인테리어">인테리어</option>
+      </select>
+      <select id="fTier">
+        <option value="">티어 전체</option>
+        <option value="nano">Nano (500~1만)</option>
+        <option value="micro">Micro (1만~10만)</option>
+        <option value="mid">Mid (10만~50만)</option>
+        <option value="macro">Macro (50만~100만)</option>
+        <option value="mega">Mega (100만+)</option>
+      </select>
+      <select id="fGrade">
+        <option value="">등급 전체</option>
+        <option value="S">S등급 이상</option>
+        <option value="A">A등급 이상</option>
+        <option value="B">B등급 이상</option>
+      </select>
+      <button class="btn-search" onclick="searchInf()">검색</button>
+    </div>
+    <div id="infGrid"><div class="spinner"></div></div>
+  </div>
+
+  <!-- 광고 의뢰 등록 -->
+  <div class="panel" id="panel-request">
+    <div class="request-form">
+      <h2>📋 광고 의뢰 등록</h2>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>의뢰 제목</label>
+          <input type="text" id="rTitle" placeholder="예: 신제품 립스틱 인스타 피드 광고"/>
+        </div>
+        <div class="form-group">
+          <label>카테고리</label>
+          <select id="rCat">
+            <option value="">선택</option>
+            <option value="뷰티">뷰티</option><option value="패션">패션</option>
+            <option value="음식">음식</option><option value="여행">여행</option>
+            <option value="육아">육아</option><option value="운동">운동</option>
+            <option value="게임">게임</option><option value="IT/테크">IT/테크</option>
+            <option value="반려동물">반려동물</option><option value="인테리어">인테리어</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>예산</label>
+          <select id="rBudget">
+            <option value="">선택</option>
+            <option value="50">50만원</option>
+            <option value="100">100만원</option>
+            <option value="300">300만원</option>
+            <option value="500">500만원</option>
+            <option value="1000">1000만원</option>
+            <option value="3000">3000만원+</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>최소 티어</label>
+          <select id="rTier">
+            <option value="">상관없음</option>
+            <option value="nano">Nano 이상</option>
+            <option value="micro">Micro 이상</option>
+            <option value="mid">Mid 이상</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>최소 등급</label>
+          <select id="rGrade">
+            <option value="">상관없음</option>
+            <option value="S">S등급</option>
+            <option value="A">A등급 이상</option>
+            <option value="B">B등급 이상</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>의뢰 내용</label>
+          <textarea id="rDesc" rows="3" placeholder="광고 내용, 요청사항, 일정 등을 입력해주세요"></textarea>
+        </div>
+      </div>
+      <button class="btn-submit" onclick="submitRequest()">의뢰 등록하기</button>
+      <div class="error-box" id="reqError" style="display:none;background:#FEF0F0;border:1px solid #F5C6C6;border-radius:8px;padding:12px 14px;color:var(--danger);font-size:13px;margin-top:12px"></div>
+    </div>
+  </div>
+
+  <!-- 내 의뢰 목록 -->
+  <div class="panel" id="panel-myreqs">
+    <div id="myReqsList"><div class="spinner"></div></div>
+  </div>
+
+</div>
+
+<script>
+const GRADE_CLR={S:'#5B4EC8',A:'#2D6A4F',B:'#B7935A',C:'#E67E22',D:'#C0392B'}
+const CAT_CLR={
+  '뷰티':'#C2185B','패션':'#5B4EC8','음식':'#D95030','여행':'#0277BD',
+  '육아':'#E91E8C','운동':'#2E7D32','게임':'#6A1B9A','IT/테크':'#01579B',
+  '반려동물':'#795548','인테리어':'#5D4037'
+}
+const CAT_BG={
+  '뷰티':'#FCE4EC','패션':'#EDE7F6','음식':'#FBE9E7','여행':'#E1F5FE',
+  '육아':'#FCE4EC','운동':'#E8F5E9','게임':'#F3E5F5','IT/테크':'#E1F5FE',
+  '반려동물':'#EFEBE9','인테리어':'#EFEBE9'
+}
+
+let companyEmail = ''
+let companyName  = ''
+
+window.onload = () => {
+  companyEmail = sessionStorage.getItem('company_email') || ''
+  companyName  = sessionStorage.getItem('company_name')  || ''
+  if(!companyEmail) { location.href='/company/join'; return }
+  document.getElementById('companyName').textContent = '🏢 ' + companyName
+  loadStats()
+  searchInf()
+}
+
+function logout() {
+  sessionStorage.removeItem('company_email')
+  sessionStorage.removeItem('company_name')
+  location.href = '/company/join'
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'))
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'))
+  el.classList.add('active')
+  document.getElementById('panel-'+name).classList.add('active')
+  if(name==='myreqs') loadMyReqs()
+}
+
+async function loadStats() {
+  try {
+    const d = await fetch('/api/stats').then(r=>r.json())
+    document.getElementById('sTotalInf').textContent  = d.total   || 0
+    document.getElementById('sAvgScore').textContent  = d.avg_score || 0
+    const reqs = await fetch(`/api/company/requests?email=${encodeURIComponent(companyEmail)}`).then(r=>r.json())
+    document.getElementById('sTotalReq').textContent = reqs.total || 0
+    document.getElementById('sOpenReq').textContent  = reqs.open  || 0
+  } catch(e){}
+}
+
+async function searchInf() {
+  document.getElementById('infGrid').innerHTML = '<div class="spinner"></div>'
+  const cat   = document.getElementById('fCat').value
+  const tier  = document.getElementById('fTier').value
+  const grade = document.getElementById('fGrade').value
+  let url = '/api/marketplace?limit=30'
+  if(cat)   url += '&category='+encodeURIComponent(cat)
+  if(tier)  url += '&tier='+encodeURIComponent(tier)
+  if(grade) url += '&grade_min='+encodeURIComponent(grade)
+  try {
+    const data = await fetch(url).then(r=>r.json())
+    const list = data.influencers || []
+    if(!list.length) { document.getElementById('infGrid').innerHTML='<div class="empty">조건에 맞는 인플루언서가 없습니다</div>'; return }
+    document.getElementById('infGrid').innerHTML = `<div class="inf-grid">${list.map(inf=>infCard(inf)).join('')}</div>`
+  } catch(e) { document.getElementById('infGrid').innerHTML='<div class="empty">로드 실패</div>' }
+}
+
+function infCard(inf) {
+  const g   = inf.grade||'D'
+  const cat = inf.category||'일반'
+  const clr = CAT_CLR[cat]||'#2D6A4F'
+  const bg  = CAT_BG[cat]||'#E8F3ED'
+  return `<div class="inf-card">
+    <div class="inf-top">
+      <div class="avatar">${(inf.name||'?').charAt(0)}</div>
+      <div><div class="inf-name">${inf.name}</div><div class="inf-handle">@${inf.insta_handle}</div></div>
+      <div class="grade-dot" style="background:${GRADE_CLR[g]||'#888'}">${g}</div>
+    </div>
+    <div class="inf-stats">
+      <div class="stat"><div class="sv">${inf.final_score||0}점</div><div class="sl">신뢰도</div></div>
+      <div class="stat"><div class="sv">${(inf.follower_count||0).toLocaleString()}</div><div class="sl">팔로워</div></div>
+      <div class="stat"><div class="sv">${(inf.raw_er||0).toFixed(1)}%</div><div class="sl">참여율</div></div>
+      <div class="stat"><div class="sv">${(inf.tier||'').toUpperCase()}</div><div class="sl">티어</div></div>
+    </div>
+    <div class="inf-footer">
+      <span class="cat-badge" style="background:${bg};color:${clr}">${cat}</span>
+      <span class="inf-price">피드 ${inf.feed_fmt||'—'}</span>
+    </div>
+  </div>`
+}
+
+async function submitRequest() {
+  const title  = document.getElementById('rTitle').value.trim()
+  const cat    = document.getElementById('rCat').value
+  const budget = document.getElementById('rBudget').value
+  const tier   = document.getElementById('rTier').value
+  const grade  = document.getElementById('rGrade').value
+  const desc   = document.getElementById('rDesc').value.trim()
+
+  if(!title||!cat||!budget) { showReqErr('제목, 카테고리, 예산은 필수입니다'); return }
+
+  try {
+    const res  = await fetch('/api/company/request', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email:companyEmail, title, category:cat, budget:parseInt(budget), tier_min:tier, grade_min:grade, description:desc})
+    })
+    const data = await res.json()
+    if(data.error){ showReqErr(data.error); return }
+    alert('✅ 의뢰가 등록되었습니다!')
+    document.getElementById('rTitle').value = ''
+    document.getElementById('rDesc').value  = ''
+    loadStats()
+  } catch(e) { showReqErr('서버 오류: '+e.message) }
+}
+
+function showReqErr(msg) {
+  const el = document.getElementById('reqError')
+  el.textContent = '❌ ' + msg
+  el.style.display = 'block'
+}
+
+async function loadMyReqs() {
+  document.getElementById('myReqsList').innerHTML = '<div class="spinner"></div>'
+  try {
+    const data = await fetch(`/api/company/requests?email=${encodeURIComponent(companyEmail)}`).then(r=>r.json())
+    const list = data.requests || []
+    if(!list.length) { document.getElementById('myReqsList').innerHTML='<div class="empty">등록된 의뢰가 없습니다</div>'; return }
+    document.getElementById('myReqsList').innerHTML = list.map(r=>`
+      <div class="request-card">
+        <div class="req-info">
+          <div class="req-title">${r.title}</div>
+          <div class="req-meta">
+            <span>카테고리: ${r.category||'—'}</span>
+            <span>예산: ${(r.budget||0).toLocaleString()}만원</span>
+            <span>등록일: ${(r.created_at||'').slice(0,10)}</span>
+          </div>
+        </div>
+        <span class="req-status ${r.status==='open'?'status-open':'status-closed'}">${r.status==='open'?'진행 중':'마감'}</span>
+      </div>`).join('')
+  } catch(e) { document.getElementById('myReqsList').innerHTML='<div class="empty">로드 실패</div>' }
+}
+</script>
+</body>
+</html>

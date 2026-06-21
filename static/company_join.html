@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>기업 회원가입 — InfluMatch</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--navy:#1B3A2D;--red:#2D6A4F;--gold:#B7935A;--green:#2D6A4F;--danger:#C0392B;--bg:#F7FAF8;--card:#FFFFFF;--border:#D8EDE3;--text:#111111;--muted:#777777}
+  body{font-family:'Segoe UI',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+  nav{background:var(--card);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;height:60px;gap:24px}
+  .logo{font-size:18px;font-weight:700;color:var(--navy);text-decoration:none}.logo span{color:var(--green)}
+  nav a{color:var(--muted);text-decoration:none;font-size:14px}
+  .page{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:40px;width:100%;max-width:520px}
+  .card-header{text-align:center;margin-bottom:32px}
+  .card-header .icon{font-size:40px;margin-bottom:12px}
+  .card-header h1{font-size:24px;font-weight:700;color:var(--text);margin-bottom:6px}
+  .card-header p{font-size:14px;color:var(--muted)}
+  .tabs{display:flex;background:#F7FAF8;border-radius:10px;padding:4px;margin-bottom:28px}
+  .tab-btn{flex:1;padding:9px;border:none;background:transparent;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);transition:all 0.2s}
+  .tab-btn.active{background:var(--card);color:var(--green);box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+  .form-group{margin-bottom:18px}
+  .form-group label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+  .form-group input,.form-group select,.form-group textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:8px;font-size:14px;outline:none;transition:border-color 0.2s;font-family:inherit}
+  .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--green)}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .btn-submit{width:100%;background:var(--green);color:#fff;border:none;padding:13px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px;transition:background 0.2s}
+  .btn-submit:hover{background:var(--navy)}
+  .btn-submit:disabled{background:#ccc;cursor:not-allowed}
+  .divider{text-align:center;color:var(--muted);font-size:12px;margin:16px 0;position:relative}
+  .divider::before{content:'';position:absolute;top:50%;left:0;right:0;height:1px;background:var(--border)}
+  .divider span{background:var(--card);padding:0 12px;position:relative}
+  .link-row{text-align:center;font-size:13px;color:var(--muted);margin-top:16px}
+  .link-row a{color:var(--green);font-weight:600;text-decoration:none}
+  .error-box{background:#FEF0F0;border:1px solid #F5C6C6;border-radius:8px;padding:12px 14px;color:var(--danger);font-size:13px;margin-top:12px;display:none}
+  .error-box.show{display:block}
+  .success-box{display:none;text-align:center;padding:20px 0}
+  .success-box.show{display:block}
+  .success-icon{font-size:56px;margin-bottom:16px}
+  .success-box h3{font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px}
+  .success-box p{font-size:14px;color:var(--muted);margin-bottom:20px}
+  .btn-go{display:inline-block;background:var(--green);color:#fff;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="logo">InfluMatch<span>.</span></a>
+  <a href="/marketplace">탐색</a>
+  <a href="/join" style="color:var(--muted)">인플루언서 등록</a>
+  <a href="/dashboard" style="margin-left:auto;color:var(--green);font-weight:600">인플루언서 로그인</a>
+</nav>
+
+<div class="page">
+  <div class="card">
+
+    <!-- 성공 화면 -->
+    <div class="success-box" id="successBox">
+      <div class="success-icon">🎉</div>
+      <h3>가입 완료!</h3>
+      <p>기업 계정이 생성되었습니다.<br>이제 인플루언서를 검색하고 광고 의뢰를 시작해보세요.</p>
+      <a href="/company/dashboard" class="btn-go">기업 대시보드로 이동 →</a>
+    </div>
+
+    <!-- 폼 -->
+    <div id="formWrap">
+      <div class="card-header">
+        <div class="icon">🏢</div>
+        <h1>기업 회원가입</h1>
+        <p>인플루언서 마케팅을 시작해보세요</p>
+      </div>
+
+      <!-- 회원가입 / 로그인 탭 -->
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('join',this)">회원가입</button>
+        <button class="tab-btn" onclick="switchTab('login',this)">로그인</button>
+      </div>
+
+      <!-- 회원가입 폼 -->
+      <div id="joinForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label>담당자 이름</label>
+            <input type="text" id="cName" placeholder="홍길동"/>
+          </div>
+          <div class="form-group">
+            <label>회사명</label>
+            <input type="text" id="cCompany" placeholder="(주)예시기업"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>업종</label>
+          <select id="cIndustry">
+            <option value="">선택해주세요</option>
+            <option value="뷰티/화장품">뷰티/화장품</option>
+            <option value="패션/의류">패션/의류</option>
+            <option value="식품/음료">식품/음료</option>
+            <option value="여행/숙박">여행/숙박</option>
+            <option value="IT/앱/서비스">IT/앱/서비스</option>
+            <option value="생활/인테리어">생활/인테리어</option>
+            <option value="건강/운동">건강/운동</option>
+            <option value="교육">교육</option>
+            <option value="금융/보험">금융/보험</option>
+            <option value="기타">기타</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>이메일</label>
+          <input type="email" id="cEmail" placeholder="company@example.com"/>
+        </div>
+        <div class="form-group full">
+          <label>비밀번호</label>
+          <input type="password" id="cPassword" placeholder="6자 이상 입력해 주세요"/>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>연락처</label>
+            <input type="tel" id="cPhone" placeholder="010-0000-0000"/>
+          </div>
+          <div class="form-group">
+            <label>월 광고 예산</label>
+            <select id="cBudget">
+              <option value="">선택</option>
+              <option value="100만원 미만">100만원 미만</option>
+              <option value="100~500만원">100~500만원</option>
+              <option value="500만~1000만원">500만~1000만원</option>
+              <option value="1000만원 이상">1000만원 이상</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn-submit" id="btnJoin" onclick="submitJoin()">가입하기</button>
+        <div class="error-box" id="joinError"></div>
+        <div class="link-row">이미 계정이 있으신가요? <a onclick="switchTab('login',document.querySelectorAll('.tab-btn')[1])">로그인</a></div>
+      </div>
+
+      <!-- 로그인 폼 -->
+      <div id="loginForm" style="display:none">
+        <div class="form-group">
+          <label>이메일</label>
+          <input type="email" id="lEmail" placeholder="company@example.com" onkeydown="if(event.key==='Enter')submitLogin()"/>
+        </div>
+        <div class="form-group">
+          <label>회사명</label>
+          <input type="text" id="lCompany" placeholder="(주)예시기업" onkeydown="if(event.key==='Enter')submitLogin()"/>
+        </div>
+        <div class="form-group">
+          <label>비밀번호</label>
+          <input type="password" id="lPassword" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')submitLogin()"/>
+        </div>
+        <button class="btn-submit" onclick="submitLogin()">로그인</button>
+        <div class="error-box" id="loginError"></div>
+        <div class="link-row">계정이 없으신가요? <a onclick="switchTab('join',document.querySelectorAll('.tab-btn')[0])">회원가입</a></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function switchTab(type, el) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'))
+  el.classList.add('active')
+  document.getElementById('joinForm').style.display  = type==='join'  ? 'block' : 'none'
+  document.getElementById('loginForm').style.display = type==='login' ? 'block' : 'none'
+}
+
+async function submitJoin() {
+  const name     = document.getElementById('cName').value.trim()
+  const company  = document.getElementById('cCompany').value.trim()
+  const industry = document.getElementById('cIndustry').value
+  const email    = document.getElementById('cEmail').value.trim()
+  const phone    = document.getElementById('cPhone').value.trim()
+  const budget   = document.getElementById('cBudget').value
+
+  const password = document.getElementById('cPassword').value
+  if(!name||!company||!email){ showErr('joinError','이름, 회사명, 이메일은 필수입니다'); return }
+  if(!password||password.length<6){ showErr('joinError','비밀번호는 6자 이상이어야 합니다'); return }
+  if(!email.includes('@'))    { showErr('joinError','올바른 이메일을 입력해 주세요'); return }
+
+  document.getElementById('btnJoin').disabled = true
+  try {
+    const res  = await fetch('/api/company/join', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, company_name:company, industry, email, phone, budget, password})
+    })
+    const data = await res.json()
+    if(data.error){ showErr('joinError', data.error); return }
+
+    if(data.token) localStorage.setItem('company_token', data.token)
+    sessionStorage.setItem('company_email', email)
+    sessionStorage.setItem('company_name', company)
+    document.getElementById('formWrap').style.display = 'none'
+    document.getElementById('successBox').className   = 'success-box show'
+  } catch(e) {
+    showErr('joinError', '서버 오류: '+e.message)
+  } finally {
+    document.getElementById('btnJoin').disabled = false
+  }
+}
+
+async function submitLogin() {
+  const email    = document.getElementById('lEmail').value.trim()
+  const company  = document.getElementById('lCompany').value.trim()
+  const password = document.getElementById('lPassword').value
+  if(!email||!company||!password){ showErr('loginError','모든 항목을 입력해 주세요'); return }
+
+  try {
+    const res  = await fetch('/api/company/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email, company_name:company, password})
+    })
+    const data = await res.json()
+    if(data.error){ showErr('loginError', data.error); return }
+
+    if(data.token) localStorage.setItem('company_token', data.token)
+    sessionStorage.setItem('company_email', email)
+    sessionStorage.setItem('company_name', data.company_name)
+    location.href = '/company/dashboard'
+  } catch(e) {
+    showErr('loginError', '서버 오류: '+e.message)
+  }
+}
+
+function showErr(id, msg) {
+  const el = document.getElementById(id)
+  el.textContent = '❌ ' + msg
+  el.className = 'error-box show'
+}
+</script>
+</body>
+</html>

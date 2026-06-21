@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>인플루언서 마켓 — 기업과 인플루언서를 잇다</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --navy:#1B3A2D;
+    --red:#2D6A4F;
+    --gold:#B7935A;
+    --green:#2D6A4F;
+    --yellow:#B7935A;
+    --danger:#C0392B;
+    --bg:#F7FAF8;
+    --card:#FFFFFF;
+    --border:#D8EDE3;
+    --text:#111111;
+    --muted:#777777;
+    --navy2:#1B3A2D;
+  }
+  body{font-family:'Segoe UI',-apple-system,sans-serif;background:var(--bg);color:var(--text)}
+
+  /* 네비 */
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(245,240,232,0.97);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;height:60px}
+  .logo{font-size:18px;font-weight:700;color:var(--navy);text-decoration:none}
+  .logo span{color:var(--red)}
+  .nav-links{display:flex;gap:24px;margin-left:auto;align-items:center}
+  .nav-links a{color:var(--muted);text-decoration:none;font-size:14px;transition:color 0.2s}
+  .nav-links a:hover{color:var(--text)}
+  .btn-nav{background:var(--red);color:#fff!important;padding:8px 20px;border-radius:8px;font-weight:600}
+  .btn-nav:hover{background:#1B3A2D!important}
+
+  /* 히어로 */
+  .hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:80px 32px 60px;background:radial-gradient(ellipse at 50% 0%,rgba(45,106,79,0.10) 0%,transparent 70%)}
+  .hero-badge{display:inline-block;background:rgba(194,112,74,0.12);border:1px solid rgba(194,112,74,0.4);color:var(--red);padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:24px}
+  .hero h1{font-size:52px;font-weight:800;line-height:1.2;margin-bottom:20px;color:var(--navy)}
+  .hero h1 span{color:var(--red)}
+  .hero p{font-size:18px;color:var(--muted);max-width:540px;margin:0 auto 40px;line-height:1.7}
+  .hero-btns{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+  .btn-hero-primary{background:var(--red);color:#fff;padding:14px 36px;border-radius:10px;font-size:16px;font-weight:700;text-decoration:none;transition:all 0.2s}
+  .btn-hero-primary:hover{background:#1B3A2D;transform:translateY(-2px)}
+  .btn-hero-secondary{background:transparent;color:var(--text);padding:14px 36px;border-radius:10px;font-size:16px;font-weight:600;text-decoration:none;border:1px solid var(--border);transition:all 0.2s}
+  .btn-hero-secondary:hover{border-color:var(--red);color:var(--red)}
+
+  /* 통계 */
+  .stats{display:flex;justify-content:center;gap:60px;padding:40px 32px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:0 0 80px}
+  .stat-item{text-align:center}
+  .stat-num{font-size:36px;font-weight:800;color:#111111}
+  .stat-num span{color:var(--red)}
+  .stat-label{font-size:13px;color:var(--muted);margin-top:4px}
+
+  /* 섹션 */
+  section{padding:80px 32px;max-width:1100px;margin:0 auto}
+  .section-title{text-align:center;margin-bottom:56px}
+  .section-title h2{font-size:36px;font-weight:800;color:var(--navy);margin-bottom:12px}
+  .section-title p{font-size:16px;color:var(--muted)}
+
+  /* 특징 카드 */
+  .features{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  .feature-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px;transition:border-color 0.2s}
+  .feature-card:hover{border-color:var(--red)}
+  .feature-icon{font-size:36px;margin-bottom:16px}
+  .feature-card h3{font-size:18px;color:var(--navy);margin-bottom:10px}
+  .feature-card p{font-size:14px;color:var(--muted);line-height:1.7}
+
+  /* 흐름 */
+  .flow{display:flex;gap:0;align-items:stretch}
+  .flow-step{flex:1;background:var(--card);border:1px solid var(--border);padding:28px 24px;text-align:center;position:relative}
+  .flow-step:not(:last-child)::after{content:'→';position:absolute;right:-16px;top:50%;transform:translateY(-50%);font-size:20px;color:var(--red);z-index:1}
+  .flow-step:first-child{border-radius:12px 0 0 12px}
+  .flow-step:last-child{border-radius:0 12px 12px 0}
+  .flow-num{width:36px;height:36px;background:var(--red);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;margin:0 auto 12px}
+  .flow-step h4{font-size:15px;color:var(--navy);margin-bottom:8px}
+  .flow-step p{font-size:12px;color:var(--muted)}
+
+  /* CTA */
+  .cta{background:linear-gradient(135deg,#1B3A2D,#2D6A4F);border:1px solid var(--border);border-radius:20px;padding:60px;text-align:center;margin:0 32px 80px}
+  .cta h2{font-size:32px;font-weight:800;color:#FFF8F0;margin-bottom:12px}
+  .cta p{font-size:16px;color:var(--muted);margin-bottom:32px}
+
+  /* 푸터 */
+  footer{border-top:1px solid var(--border);padding:32px;text-align:center;color:var(--muted);font-size:13px}
+
+  /* 반응형 */
+  @media(max-width:768px){
+    .hero h1{font-size:32px}
+    .features{grid-template-columns:1fr}
+    .flow{flex-direction:column}
+    .flow-step:not(:last-child)::after{content:'↓';right:50%;top:auto;bottom:-16px;transform:translateX(50%)}
+    .flow-step{border-radius:0!important}
+    .flow-step:first-child{border-radius:12px 12px 0 0!important}
+    .flow-step:last-child{border-radius:0 0 12px 12px!important}
+    .stats{gap:32px;flex-wrap:wrap}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo">InfluMatch<span>.</span></a>
+  <div class="nav-links">
+    <a href="/marketplace">인플루언서 탐색</a>
+    <a href="/join">인플루언서 등록</a>
+    <a href="/dashboard" style="color:var(--green);font-weight:600">인플루언서 로그인</a>
+    <a href="/company/join" style="color:var(--navy);font-weight:600">기업 로그인</a>
+    <a href="/join" class="btn-nav">무료 시작</a>
+  </div>
+</nav>
+
+<!-- 히어로 -->
+<div class="hero">
+  <div>
+    <div class="hero-badge">🔥 AI 신뢰도 검증 플랫폼</div>
+    <h1>기업과 인플루언서를<br><span>연결하는 새로운 방법</span></h1>
+    <p>가짜 팔로워 없이, 진짜 영향력 있는 인플루언서만.<br>AI 분석으로 검증된 인플루언서와 광고를 매칭해 드립니다.</p>
+    <div class="hero-btns">
+      <a href="/join" class="btn-hero-primary">인플루언서로 등록하기</a>
+      <a href="/company/join" class="btn-hero-secondary">기업으로 시작하기 🏢</a>
+    </div>
+  </div>
+</div>
+
+<!-- 통계 -->
+<div class="stats" id="statsBar">
+  <div class="stat-item">
+    <div class="stat-num"><span id="statTotal">0</span>명</div>
+    <div class="stat-label">등록 인플루언서</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num"><span id="statActive">0</span>명</div>
+    <div class="stat-label">검증 완료</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num"><span id="statAvg">0</span>점</div>
+    <div class="stat-label">평균 신뢰도 점수</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">100<span>%</span></div>
+    <div class="stat-label">AI 자동 검증</div>
+  </div>
+</div>
+
+<!-- 특징 -->
+<section>
+  <div class="section-title">
+    <h2>왜 InfluMatch인가요?</h2>
+    <p>기존 플랫폼과 다른 단 하나의 차이, AI 신뢰도 검증</p>
+  </div>
+  <div class="features">
+    <div class="feature-card">
+      <div class="feature-icon">🤖</div>
+      <h3>AI 자동 신뢰도 검증</h3>
+      <p>가짜 팔로워, 봇 댓글, 구매 팔로워를 AI가 자동으로 탐지합니다. 직접 입력이 아닌 실시간 분석으로 100% 객관적입니다.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <h3>5단계 등급 시스템</h3>
+      <p>S/A/B/C/D 등급과 0~100점 스코어로 인플루언서의 실제 영향력을 한눈에 파악할 수 있습니다.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💰</div>
+      <h3>적정 광고 단가 제시</h3>
+      <p>팔로워 수, 등급, 카테고리를 기반으로 시장가 기준의 광고 단가를 자동 산출해 협상 기준을 제시합니다.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎯</div>
+      <h3>카테고리별 정밀 매칭</h3>
+      <p>뷰티, 패션, 음식, 여행 등 10개 카테고리로 분류해 기업의 타겟과 맞는 인플루언서만 추천합니다.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3>빠른 분석 속도</h3>
+      <p>계정 등록 후 약 3분 내에 분석 완료. 팔로워 300명 샘플링으로 신뢰도 높은 결과를 빠르게 제공합니다.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📱</div>
+      <h3>멀티 플랫폼 확장 예정</h3>
+      <p>현재 인스타그램에 이어 유튜브, 틱톡 분석도 순차적으로 지원할 예정입니다.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 흐름 -->
+<section>
+  <div class="section-title">
+    <h2>이용 방법</h2>
+    <p>간단한 3단계로 시작하세요</p>
+  </div>
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-num">1</div>
+      <h4>인플루언서 등록</h4>
+      <p>이름, 이메일, 인스타 계정 입력</p>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">2</div>
+      <h4>AI 자동 분석</h4>
+      <p>약 3분간 팔로워·게시물 분석</p>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">3</div>
+      <h4>등급 부여</h4>
+      <p>S~D 등급 + 광고 단가 산출</p>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">4</div>
+      <h4>기업 매칭</h4>
+      <p>마켓플레이스에 프로필 노출</p>
+    </div>
+  </div>
+</section>
+
+<!-- 2분할 CTA -->
+<section style="padding:0 32px 80px;max-width:1100px;margin:0 auto">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+    <div style="background:linear-gradient(135deg,#1B3A2D,#2D6A4F);border-radius:20px;padding:48px 40px;text-align:center">
+      <div style="font-size:40px;margin-bottom:16px">📱</div>
+      <h2 style="font-size:24px;font-weight:800;color:#fff;margin-bottom:10px">인플루언서라면</h2>
+      <p style="font-size:14px;color:rgba(255,255,255,0.75);margin-bottom:24px;line-height:1.7">
+        무료로 등록하고 AI 신뢰도 검증을 받아보세요.<br>등급이 높을수록 더 많은 광고 의뢰가 들어옵니다.
+      </p>
+      <a href="/join" style="display:inline-block;background:#fff;color:#1B3A2D;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none">무료로 등록하기 →</a>
+    </div>
+
+    <div style="background:linear-gradient(135deg,#2C3E50,#3D5266);border-radius:20px;padding:48px 40px;text-align:center">
+      <div style="font-size:40px;margin-bottom:16px">🏢</div>
+      <h2 style="font-size:24px;font-weight:800;color:#fff;margin-bottom:10px">기업/브랜드라면</h2>
+      <p style="font-size:14px;color:rgba(255,255,255,0.75);margin-bottom:24px;line-height:1.7">
+        검증된 인플루언서를 찾아보세요.<br>카테고리, 예산, 등급별로 필터링해 딱 맞는 파트너를 찾을 수 있습니다.
+      </p>
+      <a href="/company/join" style="display:inline-block;background:#fff;color:#2C3E50;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none">기업으로 시작하기 →</a>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <p>© 2026 InfluMatch. Powered by insta_engine AI</p>
+</footer>
+
+<script>
+// 통계 로드
+fetch('/api/stats').then(r=>r.json()).then(d=>{
+  document.getElementById('statTotal').textContent = d.total || 0
+  document.getElementById('statActive').textContent = d.active || 0
+  document.getElementById('statAvg').textContent = d.avg_score || 0
+}).catch(()=>{})
+</script>
+</body>
+</html>
