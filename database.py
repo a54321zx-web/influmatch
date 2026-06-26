@@ -1,402 +1,298 @@
 """
-database.py
-SQLite 기반 플랫폼 DB
-인플루언서 회원 + 분석 결과 저장
+server.py — 클라우드 배포 전용
+Playwright 없이 웹사이트 + API만 운영
+분석은 로컬 engyn.py에서, 결과는 여기서 서빙
 """
 
-import sqlite3
 import os
 from datetime import datetime
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import database as db
+from auth import (
+    hash_password, verify_password,
+    create_token, get_current_user, get_current_user_optional
+)
 
-DB_FILE = "platform.db"
+app = FastAPI(title="InfluMatch v5.8 — AI 인플루언서 마케팅 플랫폼")
 
-
-def get_conn():
-    conn = sqlite3.connect(DB_FILE)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-def init_db():
-    """DB 초기화 — 최초 1회 실행"""
-    conn = get_conn()
-    c = conn.cursor()
-
-    # 인플루언서 회원 테이블
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS influencers (
-            id            INTEGER PRIMARY KEY AUTOINCREMENT,
-            name          TEXT NOT NULL,
-            email         TEXT UNIQUE NOT NULL,
-            phone         TEXT,
-            insta_handle  TEXT UNIQUE NOT NULL,
-            category      TEXT,
-            bio           TEXT,
-            joined_at     TEXT DEFAULT (datetime('now','localtime')),
-            status        TEXT DEFAULT 'pending',   -- pending/analyzed/active/inactive
-            
-            -- 분석 결과
-            final_score       REAL DEFAULT 0,
-            grade             TEXT DEFAULT '',
-            tier              TEXT DEFAULT '',
-            follower_count    INTEGER DEFAULT 0,
-            fake_ratio        REAL DEFAULT 0,
-            fake_risk         TEXT DEFAULT '',
-            raw_er            REAL DEFAULT 0,
-            engagement_score  REAL DEFAULT 0,
-            follower_quality  REAL DEFAULT 0,
-            comment_quality   REAL DEFAULT 0,
-            consistency       REAL DEFAULT 0,
-            
-            -- 광고 단가
-            feed_price    INTEGER DEFAULT 0,
-            story_price   INTEGER DEFAULT 0,
-            reels_price   INTEGER DEFAULT 0,
-            feed_fmt      TEXT DEFAULT '',
-            story_fmt     TEXT DEFAULT '',
-            reels_fmt     TEXT DEFAULT '',
-            
-            last_analyzed TEXT
-        )
-    """)
-
-    # 기업 회원 테이블 (나중에 확장)
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS companies (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            name        TEXT NOT NULL,
-            email       TEXT UNIQUE NOT NULL,
-            industry    TEXT,
-            joined_at   TEXT DEFAULT (datetime('now','localtime')),
-            status      TEXT DEFAULT 'active'
-        )
-    """)
-
-    # 광고 의뢰 테이블 (나중에 확장)
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS campaigns (
-            id              INTEGER PRIMARY KEY AUTOINCREMENT,
-            company_id      INTEGER,
-            title           TEXT,
-            category        TEXT,
-            budget          INTEGER,
-            tier_min        TEXT,
-            grade_min       TEXT,
-            status          TEXT DEFAULT 'open',
-            created_at      TEXT DEFAULT (datetime('now','localtime')),
-            FOREIGN KEY(company_id) REFERENCES companies(id)
-        )
-    """)
-
-    conn.commit()
-    conn.close()
-    print("✅ DB 초기화 완료: platform.db")
+# 정적 파일
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
-# ── CRUD ──────────────────────────────────────────────────────
-def create_influencer(data: dict) -> int:
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("""
-        INSERT INTO influencers (name, email, phone, insta_handle, category)
-        VALUES (:name, :email, :phone, :insta_handle, :category)
-    """, data)
-    conn.commit()
-    row_id = c.lastrowid
-    conn.close()
-    return row_id
+# ══════════════════════════════════════════════════════════════
+# 페이지 라우팅
+# ══════════════════════════════════════════════════════════════
+@app.get("/")
+async def page_landing():
+    return FileResponse("static/landing.html")
+
+@app.get("/join")
+async def page_join():
+    return FileResponse("static/join.html")
+
+@app.get("/dashboard")
+async def page_dashboard():
+    return FileResponse("static/dashboard.html")
+
+@app.get("/marketplace")
+async def page_marketplace():
+    return FileResponse("static/marketplace.html")
+
+@app.get("/company/join")
+async def page_company_join():
+    return FileResponse("static/company_join.html")
+
+@app.get("/company/dashboard")
+async def page_company_dashboard():
+    return FileResponse("static/company_dashboard.html")
+
+@app.get("/admin")
+async def page_admin():
+    return FileResponse("static/index.html")
+
+@app.get("/pricing")
+async def page_pricing():
+    return FileResponse("static/pricing.html")
 
 
-def update_analysis(insta_handle: str, result: dict, account_data: dict):
-    """분석 결과 저장"""
-    sb  = result.get("score_breakdown", {})
-    adp = result.get("ad_price", {})
-    cat = result.get("category", {})
+# ══════════════════════════════════════════════════════════════
+# 인플루언서 API
+# ══════════════════════════════════════════════════════════════
+@app.post("/api/join")
+async def api_join(data: dict):
+    """인플루언서 회원가입 — 분석은 로컬에서 별도 실행"""
+    required = ["name", "email", "insta_handle", "password"]
+    for field in required:
+        if not data.get(field):
+            return {"error": f"{field} 필드가 필요합니다"}
+    if len(data["password"]) < 6:
+        return {"error": "비밀번호는 6자 이상이어야 합니다"}
 
-    conn = get_conn()
-    conn.execute("""
-        UPDATE influencers SET
-            status          = 'active',
-            final_score     = :final_score,
-            grade           = :grade,
-            tier            = :tier,
-            follower_count  = :follower_count,
-            fake_ratio      = :fake_ratio,
-            fake_risk       = :fake_risk,
-            raw_er          = :raw_er,
-            engagement_score= :engagement,
-            follower_quality= :follower_quality,
-            comment_quality = :comment_quality,
-            consistency     = :consistency,
-            feed_price      = :feed_price,
-            story_price     = :story_price,
-            reels_price     = :reels_price,
-            feed_fmt        = :feed_fmt,
-            story_fmt       = :story_fmt,
-            reels_fmt       = :reels_fmt,
-            category        = :category,
-            last_analyzed   = :last_analyzed
-        WHERE insta_handle = :insta_handle
-    """, {
-        "insta_handle":   insta_handle,
-        "final_score":    result.get("final_score", 0),
-        "grade":          result.get("grade", ""),
-        "tier":           result.get("tier", ""),
-        "follower_count": account_data.get("follower_count", 0),
-        "fake_ratio":     result.get("fake_ratio", 0),
-        "fake_risk":      result.get("fake_follower_risk", ""),
-        "raw_er":         result.get("raw_er", 0),
-        "engagement":     sb.get("engagement", 0),
-        "follower_quality": sb.get("follower_quality", 0),
-        "comment_quality":  sb.get("comment_quality", 0),
-        "consistency":      sb.get("consistency", 0),
-        "feed_price":     adp.get("feed_price", 0),
-        "story_price":    adp.get("story_price", 0),
-        "reels_price":    adp.get("reels_price", 0),
-        "feed_fmt":       adp.get("feed_fmt", ""),
-        "story_fmt":      adp.get("story_fmt", ""),
-        "reels_fmt":      adp.get("reels_fmt", ""),
-        "category":       cat.get("primary", "일반"),
-        "last_analyzed":  datetime.now().strftime("%Y-%m-%d %H:%M"),
+    handle = data["insta_handle"].replace("@", "").strip()
+
+    if db.get_influencer_by_handle(handle):
+        return {"error": "이미 등록된 계정입니다"}
+    if db.get_influencer_by_email(data["email"]):
+        return {"error": "이미 등록된 이메일입니다"}
+
+    hashed_pw = hash_password(data["password"])
+    row_id = db.create_influencer({
+        "name":         data["name"],
+        "email":        data["email"],
+        "phone":        data.get("phone", ""),
+        "insta_handle": handle,
+        "category":     data.get("category", ""),
     })
-    conn.commit()
-    conn.close()
+    db.set_influencer_password(handle, hashed_pw)
+
+    token = create_token({"sub": handle, "type": "influencer", "email": data["email"]})
+    return {
+        "success":  True,
+        "id":       row_id,
+        "token":    token,
+        "message":  "가입 완료! AI 분석은 최대 24시간 내 완료됩니다.",
+        "grade":    "분석 중",
+        "final_score": 0,
+        "tier":     "분석 중",
+        "follower_count": 0,
+        "fake_risk": "분석 중",
+        "category": data.get("category", "일반"),
+        "feed_fmt": "분석 후 산출",
+        "reels_fmt": "분석 후 산출",
+    }
 
 
-def get_influencer_by_handle(handle: str) -> dict | None:
-    conn = get_conn()
-    row = conn.execute(
-        "SELECT * FROM influencers WHERE insta_handle = ?", (handle,)
-    ).fetchone()
-    conn.close()
-    return dict(row) if row else None
+@app.post("/api/login")
+async def api_influencer_login(data: dict):
+    handle   = (data.get("insta_handle") or "").replace("@","").strip()
+    password = data.get("password","")
+    if not handle or not password:
+        return {"error": "계정명과 비밀번호를 입력해 주세요"}
+
+    inf = db.get_influencer_by_handle(handle)
+    if not inf:
+        return {"error": "등록되지 않은 계정입니다"}
+
+    hashed = db.get_influencer_password(handle)
+    if not hashed or not verify_password(password, hashed):
+        return {"error": "비밀번호가 올바르지 않습니다"}
+
+    token = create_token({"sub": handle, "type": "influencer", "email": inf["email"]})
+    return {"success": True, "token": token, "name": inf["name"], "handle": handle}
 
 
-def get_influencer_by_email(email: str) -> dict | None:
-    conn = get_conn()
-    row = conn.execute(
-        "SELECT * FROM influencers WHERE email = ?", (email,)
-    ).fetchone()
-    conn.close()
-    return dict(row) if row else None
+@app.get("/api/influencer/{handle}")
+async def api_influencer(handle: str):
+    inf = db.get_influencer_by_handle(handle)
+    if not inf:
+        return {"error": "인플루언서를 찾을 수 없습니다"}
+    return inf
 
 
-def get_marketplace(
+@app.post("/api/reanalyze/{handle}")
+async def api_reanalyze(handle: str):
+    """재분석 요청 — 로컬 engyn.py에서 처리 후 DB 업데이트"""
+    inf = db.get_influencer_by_handle(handle)
+    if not inf:
+        return {"error": "등록된 인플루언서가 없습니다"}
+    return {
+        "success": True,
+        "message": "재분석 요청이 접수됐습니다. 최대 24시간 내 업데이트됩니다."
+    }
+
+
+# ══════════════════════════════════════════════════════════════
+# 알림 API
+# ══════════════════════════════════════════════════════════════
+@app.get("/api/notifications/{handle}")
+async def api_get_notifications(handle: str):
+    notifs = db.get_notifications(handle)
+    unread = db.get_unread_count(handle)
+    return {"notifications": notifs, "unread": unread}
+
+@app.post("/api/notifications/{notif_id}/read")
+async def api_mark_read(notif_id: int):
+    db.mark_read(notif_id)
+    return {"success": True}
+
+
+# ══════════════════════════════════════════════════════════════
+# 마켓플레이스 API
+# ══════════════════════════════════════════════════════════════
+@app.get("/api/marketplace")
+async def api_marketplace(
     category: str = None,
     tier: str = None,
     grade_min: str = None,
     limit: int = 50
-) -> list[dict]:
-    """마켓플레이스 검색 — 활성 인플루언서만"""
-    query  = "SELECT * FROM influencers WHERE status = 'active'"
-    params = []
-
-    if category:
-        query += " AND category = ?"
-        params.append(category)
-    if tier:
-        query += " AND tier = ?"
-        params.append(tier)
-    if grade_min:
-        grades = ["S","A","B","C","D"]
-        min_idx = grades.index(grade_min) if grade_min in grades else 4
-        allowed = grades[:min_idx+1]
-        placeholders = ",".join("?"*len(allowed))
-        query += f" AND grade IN ({placeholders})"
-        params.extend(allowed)
-
-    query += " ORDER BY final_score DESC LIMIT ?"
-    params.append(limit)
-
-    conn = get_conn()
-    rows = conn.execute(query, params).fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+):
+    influencers = db.get_marketplace(category, tier, grade_min, limit)
+    return {"influencers": influencers, "total": len(influencers)}
 
 
-def get_stats() -> dict:
-    """관리자용 통계"""
-    conn = get_conn()
-    total    = conn.execute("SELECT COUNT(*) FROM influencers").fetchone()[0]
-    active   = conn.execute("SELECT COUNT(*) FROM influencers WHERE status='active'").fetchone()[0]
-    pending  = conn.execute("SELECT COUNT(*) FROM influencers WHERE status='pending'").fetchone()[0]
-    avg_score= conn.execute("SELECT AVG(final_score) FROM influencers WHERE status='active'").fetchone()[0] or 0
-    conn.close()
-    return {
-        "total": total, "active": active,
-        "pending": pending, "avg_score": round(avg_score, 1)
-    }
-
-
-# 최초 실행 시 DB 초기화
-init_db()
+@app.get("/api/stats")
+async def api_stats():
+    return db.get_stats()
 
 
 # ══════════════════════════════════════════════════════════════
-# 기업 회원 CRUD
+# 기업 API
 # ══════════════════════════════════════════════════════════════
-def create_company(data: dict) -> int:
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("""
-        INSERT INTO companies (name, email, industry)
-        VALUES (:company_name, :email, :industry)
-    """, data)
-    conn.commit()
-    row_id = c.lastrowid
-    conn.close()
-    return row_id
+@app.post("/api/company/join")
+async def api_company_join(data: dict):
+    if not data.get("email") or not data.get("company_name"):
+        return {"error": "이메일과 회사명은 필수입니다"}
+    if not data.get("password") or len(data["password"]) < 6:
+        return {"error": "비밀번호는 6자 이상이어야 합니다"}
+    if db.get_company_by_email(data["email"]):
+        return {"error": "이미 등록된 이메일입니다"}
+    hashed_pw = hash_password(data["password"])
+    row_id = db.create_company(data)
+    db.set_company_password(data["email"], hashed_pw)
+    token = create_token({"sub": data["email"], "type": "company", "name": data["company_name"]})
+    return {"success": True, "id": row_id, "token": token, "company_name": data["company_name"]}
 
 
-def get_company_by_email(email: str) -> dict | None:
-    conn = get_conn()
-    row = conn.execute(
-        "SELECT * FROM companies WHERE email = ?", (email,)
-    ).fetchone()
-    conn.close()
-    return dict(row) if row else None
-
-
-# ══════════════════════════════════════════════════════════════
-# 광고 의뢰 CRUD
-# ══════════════════════════════════════════════════════════════
-def create_campaign(data: dict) -> int:
-    conn = get_conn()
-    # 기업 ID 조회
-    company = conn.execute(
-        "SELECT id FROM companies WHERE email = ?", (data["email"],)
-    ).fetchone()
+@app.post("/api/company/login")
+async def api_company_login(data: dict):
+    company = db.get_company_by_email(data.get("email",""))
     if not company:
-        conn.close()
-        return -1
-
-    c = conn.cursor()
-    c.execute("""
-        INSERT INTO campaigns (company_id, title, category, budget, tier_min, grade_min)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (company["id"], data["title"], data["category"],
-          data.get("budget", 0), data.get("tier_min", ""),
-          data.get("grade_min", "")))
-    conn.commit()
-    row_id = c.lastrowid
-    conn.close()
-    return row_id
+        return {"error": "등록된 이메일이 없습니다"}
+    hashed = db.get_company_password(data.get("email",""))
+    if hashed and not verify_password(data.get("password",""), hashed):
+        return {"error": "비밀번호가 올바르지 않습니다"}
+    token = create_token({"sub": data["email"], "type": "company", "name": company["name"]})
+    return {"success": True, "token": token, "company_name": company["name"]}
 
 
-def get_company_campaigns(email: str) -> list[dict]:
-    conn = get_conn()
-    company = conn.execute(
-        "SELECT id FROM companies WHERE email = ?", (email,)
-    ).fetchone()
-    if not company:
-        conn.close()
-        return []
-    rows = conn.execute(
-        "SELECT * FROM campaigns WHERE company_id = ? ORDER BY created_at DESC",
-        (company["id"],)
-    ).fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+@app.post("/api/company/request")
+async def api_company_request(data: dict):
+    if not data.get("email"):
+        return {"error": "로그인이 필요합니다"}
+    if not data.get("title") or not data.get("category"):
+        return {"error": "제목과 카테고리는 필수입니다"}
+    row_id = db.create_campaign(data)
+    if row_id == -1:
+        return {"error": "기업 계정을 찾을 수 없습니다"}
+    match_count = db.create_match_notifications(row_id, data)
+    return {"success": True, "id": row_id, "matched_influencers": match_count}
 
 
-# ══════════════════════════════════════════════════════════════
-# 알림 시스템
-# ══════════════════════════════════════════════════════════════
-def init_notifications():
-    conn = get_conn()
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS notifications (
-            id           INTEGER PRIMARY KEY AUTOINCREMENT,
-            insta_handle TEXT NOT NULL,
-            type         TEXT NOT NULL,   -- 'campaign_match' | 'system'
-            title        TEXT NOT NULL,
-            body         TEXT,
-            campaign_id  INTEGER,
-            is_read      INTEGER DEFAULT 0,
-            created_at   TEXT DEFAULT (datetime('now','localtime')),
-            FOREIGN KEY(campaign_id) REFERENCES campaigns(id)
-        )
-    """)
-    conn.commit()
-    conn.close()
+@app.get("/api/company/requests")
+async def api_company_requests(email: str):
+    campaigns = db.get_company_campaigns(email)
+    open_cnt  = sum(1 for c in campaigns if c.get("status") == "open")
+    return {"requests": campaigns, "total": len(campaigns), "open": open_cnt}
 
 
-def create_match_notifications(campaign_id: int, campaign: dict):
+# ── 멤버십 + 결제 API ─────────────────────────────────────
+@app.get("/api/plans")
+async def api_get_plans(type: str = "influencer"):
+    plans = db.get_plans(type)
+    return {"plans": plans}
+
+
+@app.get("/api/subscription/{user_id}")
+async def api_get_subscription(user_id: str):
+    sub = db.get_subscription(user_id)
+    return {"subscription": sub}
+
+
+@app.post("/api/payment/create")
+async def api_payment_create(data: dict):
+    required = ["user_id", "user_type", "order_id", "amount", "product_name"]
+    for f in required:
+        if not data.get(f):
+            return {"error": f"{f} 필드가 필요합니다"}
+    row_id = db.create_payment(data)
+    return {"success": True, "id": row_id, "order_id": data["order_id"]}
+
+
+@app.post("/api/payment/confirm")
+async def api_payment_confirm(data: dict):
     """
-    의뢰 등록 시 조건에 맞는 인플루언서에게 알림 생성
-    조건: 카테고리 일치 + 티어/등급 조건 충족
+    토스페이먼츠 결제 승인 후 호출
+    실제 운영 시 토스 API로 검증 필요
     """
-    conn = get_conn()
-
-    query  = "SELECT * FROM influencers WHERE status = 'active'"
-    params = []
-
-    if campaign.get("category"):
-        query += " AND category = ?"
-        params.append(campaign["category"])
-
-    if campaign.get("tier_min"):
-        tier_order = {"nano":1,"micro":2,"mid":3,"macro":4,"mega":5}
-        min_order  = tier_order.get(campaign["tier_min"], 1)
-        allowed    = [t for t,o in tier_order.items() if o >= min_order]
-        query += f" AND tier IN ({','.join('?'*len(allowed))})"
-        params.extend(allowed)
-
-    if campaign.get("grade_min"):
-        grade_order = {"S":1,"A":2,"B":3,"C":4,"D":5}
-        min_order   = grade_order.get(campaign["grade_min"], 5)
-        allowed     = [g for g,o in grade_order.items() if o <= min_order]
-        query += f" AND grade IN ({','.join('?'*len(allowed))})"
-        params.extend(allowed)
-
-    matches = conn.execute(query, params).fetchall()
-
-    for inf in matches:
-        conn.execute("""
-            INSERT INTO notifications (insta_handle, type, title, body, campaign_id)
-            VALUES (?, 'campaign_match', ?, ?, ?)
-        """, (
-            inf["insta_handle"],
-            f"새 광고 의뢰가 있습니다: {campaign['title']}",
-            f"카테고리: {campaign.get('category','—')} | 예산: {campaign.get('budget',0):,}만원",
-            campaign_id
-        ))
-
-    conn.commit()
-    match_count = len(matches)
-    conn.close()
-    return match_count
+    order_id    = data.get("order_id")
+    payment_key = data.get("payment_key")
+    amount      = data.get("amount")
+    if not all([order_id, payment_key, amount]):
+        return {"error": "필수 파라미터 누락"}
+    success = db.confirm_payment(order_id, payment_key, amount)
+    if success:
+        return {"success": True, "message": "결제 완료"}
+    return {"error": "결제 확인 실패"}
 
 
-def get_notifications(insta_handle: str) -> list[dict]:
-    conn = get_conn()
-    rows = conn.execute("""
-        SELECT n.*, c.title as campaign_title, c.budget, c.category as campaign_category
-        FROM notifications n
-        LEFT JOIN campaigns c ON n.campaign_id = c.id
-        WHERE n.insta_handle = ?
-        ORDER BY n.created_at DESC
-        LIMIT 20
-    """, (insta_handle,)).fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+@app.get("/api/revenue/stats")
+async def api_revenue_stats():
+    """관리자용 수익 통계"""
+    return db.get_revenue_stats()
 
 
-def mark_read(notification_id: int):
-    conn = get_conn()
-    conn.execute("UPDATE notifications SET is_read=1 WHERE id=?", (notification_id,))
-    conn.commit()
-    conn.close()
+@app.post("/api/commission/create")
+async def api_commission_create(data: dict):
+    """매칭 수수료 등록"""
+    row_id = db.create_commission(data)
+    return {"success": True, "id": row_id}
 
 
-def get_unread_count(insta_handle: str) -> int:
-    conn = get_conn()
-    count = conn.execute(
-        "SELECT COUNT(*) FROM notifications WHERE insta_handle=? AND is_read=0",
-        (insta_handle,)
-    ).fetchone()[0]
-    conn.close()
-    return count
+@app.get("/session/status")
+async def session_status():
+    return {"status": "정상", "reason": "정상", "auth_file_exists": True}
 
 
-init_notifications()
+@app.get("/history")
+async def get_history():
+    return {"records": [], "message": "히스토리는 로컬 엑셀 파일에서 확인하세요"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    print(f"🌐 InfluMatch 서버 구동 중... (포트: {port})")
+    uvicorn.run(app, host="0.0.0.0", port=port)

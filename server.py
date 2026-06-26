@@ -15,7 +15,7 @@ from auth import (
     create_token, get_current_user, get_current_user_optional
 )
 
-app = FastAPI(title="InfluMatch — AI 인플루언서 마케팅 플랫폼")
+app = FastAPI(title="InfluMatch v5.9 — AI 인플루언서 마케팅 플랫폼")
 
 # 정적 파일
 if os.path.exists("static"):
@@ -51,7 +51,15 @@ async def page_company_dashboard():
 
 @app.get("/admin")
 async def page_admin():
+    return FileResponse("static/admin_dashboard.html")
+
+@app.get("/analyze")
+async def page_analyze():
     return FileResponse("static/index.html")
+
+@app.get("/pricing")
+async def page_pricing():
+    return FileResponse("static/pricing.html")
 
 
 # ══════════════════════════════════════════════════════════════
@@ -222,6 +230,93 @@ async def api_company_requests(email: str):
     campaigns = db.get_company_campaigns(email)
     open_cnt  = sum(1 for c in campaigns if c.get("status") == "open")
     return {"requests": campaigns, "total": len(campaigns), "open": open_cnt}
+
+
+# ── 관리자 API ────────────────────────────────────────────
+@app.get("/api/admin/influencers")
+async def api_admin_influencers():
+    conn = db.get_conn()
+    rows = conn.execute(
+        "SELECT * FROM influencers ORDER BY joined_at DESC"
+    ).fetchall()
+    conn.close()
+    return {"influencers": [dict(r) for r in rows], "total": len(rows)}
+
+
+@app.get("/api/admin/companies")
+async def api_admin_companies():
+    conn = db.get_conn()
+    rows = conn.execute(
+        "SELECT * FROM companies ORDER BY joined_at DESC"
+    ).fetchall()
+    conn.close()
+    return {"companies": [dict(r) for r in rows], "total": len(rows)}
+
+
+@app.get("/api/admin/campaigns")
+async def api_admin_campaigns():
+    conn = db.get_conn()
+    rows = conn.execute("""
+        SELECT ca.*, co.name as company_name
+        FROM campaigns ca
+        LEFT JOIN companies co ON ca.company_id = co.id
+        ORDER BY ca.created_at DESC
+    """).fetchall()
+    conn.close()
+    return {"campaigns": [dict(r) for r in rows], "total": len(rows)}
+
+
+# ── 멤버십 + 결제 API ─────────────────────────────────────
+@app.get("/api/plans")
+async def api_get_plans(type: str = "influencer"):
+    plans = db.get_plans(type)
+    return {"plans": plans}
+
+
+@app.get("/api/subscription/{user_id}")
+async def api_get_subscription(user_id: str):
+    sub = db.get_subscription(user_id)
+    return {"subscription": sub}
+
+
+@app.post("/api/payment/create")
+async def api_payment_create(data: dict):
+    required = ["user_id", "user_type", "order_id", "amount", "product_name"]
+    for f in required:
+        if not data.get(f):
+            return {"error": f"{f} 필드가 필요합니다"}
+    row_id = db.create_payment(data)
+    return {"success": True, "id": row_id, "order_id": data["order_id"]}
+
+
+@app.post("/api/payment/confirm")
+async def api_payment_confirm(data: dict):
+    """
+    토스페이먼츠 결제 승인 후 호출
+    실제 운영 시 토스 API로 검증 필요
+    """
+    order_id    = data.get("order_id")
+    payment_key = data.get("payment_key")
+    amount      = data.get("amount")
+    if not all([order_id, payment_key, amount]):
+        return {"error": "필수 파라미터 누락"}
+    success = db.confirm_payment(order_id, payment_key, amount)
+    if success:
+        return {"success": True, "message": "결제 완료"}
+    return {"error": "결제 확인 실패"}
+
+
+@app.get("/api/revenue/stats")
+async def api_revenue_stats():
+    """관리자용 수익 통계"""
+    return db.get_revenue_stats()
+
+
+@app.post("/api/commission/create")
+async def api_commission_create(data: dict):
+    """매칭 수수료 등록"""
+    row_id = db.create_commission(data)
+    return {"success": True, "id": row_id}
 
 
 @app.get("/session/status")

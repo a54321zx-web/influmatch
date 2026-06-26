@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>요금제 — InfluMatch</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--navy:#1B3A2D;--green:#2D6A4F;--gold:#B7935A;--danger:#C0392B;--bg:#F7FAF8;--card:#FFFFFF;--border:#D8EDE3;--text:#111111;--muted:#777777}
+  body{font-family:'Segoe UI',-apple-system,sans-serif;background:var(--bg);color:var(--text)}
+  nav{background:var(--card);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;height:60px;gap:24px}
+  .logo{font-size:18px;font-weight:700;color:var(--navy);text-decoration:none}.logo span{color:var(--green)}
+  nav a{color:var(--muted);text-decoration:none;font-size:14px}
+  nav a:hover{color:var(--text)}
+  .btn-nav{margin-left:auto;background:var(--green);color:#fff!important;padding:8px 20px;border-radius:8px;font-weight:600}
+
+  .page{max-width:1100px;margin:0 auto;padding:60px 32px}
+  .page-header{text-align:center;margin-bottom:56px}
+  .page-header h1{font-size:40px;font-weight:800;color:var(--text);margin-bottom:12px}
+  .page-header p{font-size:16px;color:var(--muted)}
+
+  /* 탭 */
+  .type-tabs{display:flex;background:#E8F3ED;border-radius:12px;padding:4px;width:fit-content;margin:0 auto 48px}
+  .type-tab{padding:10px 32px;border:none;background:transparent;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;color:var(--muted);transition:all 0.2s}
+  .type-tab.active{background:var(--card);color:var(--green);box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+
+  /* 플랜 카드 */
+  .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-bottom:60px}
+  .plan-card{background:var(--card);border:2px solid var(--border);border-radius:16px;padding:32px;position:relative;transition:all 0.2s}
+  .plan-card.popular{border-color:var(--green);transform:scale(1.03)}
+  .popular-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;padding:4px 16px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap}
+  .plan-name{font-size:20px;font-weight:700;color:var(--text);margin-bottom:6px}
+  .plan-price{font-size:36px;font-weight:800;color:var(--text);margin-bottom:4px}
+  .plan-price span{font-size:16px;font-weight:400;color:var(--muted)}
+  .plan-desc{font-size:13px;color:var(--muted);margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+  .plan-features{list-style:none;margin-bottom:28px}
+  .plan-features li{font-size:13px;color:var(--text);padding:7px 0;display:flex;align-items:center;gap:8px}
+  .plan-features li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0}
+  .btn-plan{width:100%;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all 0.2s}
+  .btn-plan-primary{background:var(--green);color:#fff}
+  .btn-plan-primary:hover{background:var(--navy)}
+  .btn-plan-outline{background:transparent;color:var(--green);border:2px solid var(--green)}
+  .btn-plan-outline:hover{background:#E8F3ED}
+  .btn-plan-free{background:#F0F0F0;color:var(--muted)}
+
+  /* 수수료 섹션 */
+  .commission-section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:40px;margin-bottom:40px;text-align:center}
+  .commission-section h2{font-size:28px;font-weight:700;color:var(--text);margin-bottom:12px}
+  .commission-section p{font-size:15px;color:var(--muted);margin-bottom:28px}
+  .commission-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .comm-card{background:var(--bg);border-radius:12px;padding:24px;border:1px solid var(--border)}
+  .comm-card .num{font-size:36px;font-weight:800;color:var(--green);margin-bottom:6px}
+  .comm-card .label{font-size:13px;color:var(--muted)}
+
+  /* FAQ */
+  .faq{margin-bottom:60px}
+  .faq h2{font-size:24px;font-weight:700;color:var(--text);margin-bottom:24px;text-align:center}
+  .faq-item{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden}
+  .faq-q{padding:16px 20px;font-size:14px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+  .faq-q:hover{background:#F7FAF8}
+  .faq-a{padding:0 20px 16px;font-size:13px;color:var(--muted);line-height:1.7;display:none}
+  .faq-a.open{display:block}
+
+  /* 결제 모달 */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;align-items:center;justify-content:center}
+  .modal-overlay.show{display:flex}
+  .modal{background:var(--card);border-radius:16px;padding:36px;width:100%;max-width:420px;position:relative}
+  .modal h2{font-size:20px;font-weight:700;color:var(--text);margin-bottom:6px}
+  .modal .sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+  .modal-close{position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)}
+  .price-summary{background:var(--bg);border-radius:10px;padding:16px;margin-bottom:20px}
+  .price-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px}
+  .price-row.total{font-weight:700;font-size:16px;padding-top:8px;border-top:1px solid var(--border);margin-top:8px}
+  .form-group{margin-bottom:14px}
+  .form-group label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase}
+  .form-group input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:10px 13px;border-radius:8px;font-size:14px;outline:none}
+  .form-group input:focus{border-color:var(--green)}
+  .btn-pay{width:100%;background:var(--green);color:#fff;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px}
+  .btn-pay:hover{background:var(--navy)}
+  .test-notice{background:#FFF8E1;border:1px solid #FFE082;border-radius:8px;padding:10px 14px;font-size:12px;color:#795548;margin-bottom:14px}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="logo">InfluMatch<span>.</span></a>
+  <a href="/marketplace">탐색</a>
+  <a href="/pricing" style="color:var(--green);font-weight:600">요금제</a>
+  <a href="/dashboard" style="color:var(--muted)">로그인</a>
+  <a href="/join" class="btn-nav">무료 시작</a>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1>투명한 요금제</h1>
+    <p>무료로 시작하고, 필요할 때 업그레이드하세요</p>
+  </div>
+
+  <!-- 타입 탭 -->
+  <div class="type-tabs">
+    <button class="type-tab active" onclick="switchType('influencer',this)">📱 인플루언서</button>
+    <button class="type-tab" onclick="switchType('company',this)">🏢 기업/브랜드</button>
+  </div>
+
+  <!-- 플랜 카드 -->
+  <div class="plans" id="plansGrid">
+    <div style="text-align:center;padding:40px;color:var(--muted)">로딩 중...</div>
+  </div>
+
+  <!-- 매칭 수수료 -->
+  <div class="commission-section">
+    <h2>매칭 수수료</h2>
+    <p>계약 성사 시에만 수수료가 발생합니다. 계약 전까지는 완전 무료예요.</p>
+    <div class="commission-grid">
+      <div class="comm-card">
+        <div class="num">10%</div>
+        <div class="label">기본 수수료율</div>
+      </div>
+      <div class="comm-card">
+        <div class="num">8%</div>
+        <div class="label">Pro 구독 시</div>
+      </div>
+      <div class="comm-card">
+        <div class="num">5%</div>
+        <div class="label">월 거래 1천만원 이상</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="faq">
+    <h2>자주 묻는 질문</h2>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">무료 플랜으로 시작할 수 있나요? <span>+</span></div>
+      <div class="faq-a">네, 무료로 등록하고 기본 기능을 이용할 수 있습니다. 언제든지 업그레이드 가능해요.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">결제는 어떻게 이루어지나요? <span>+</span></div>
+      <div class="faq-a">토스페이먼츠를 통해 안전하게 결제됩니다. 카드, 계좌이체, 간편결제 모두 지원해요.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">구독 취소는 언제든지 가능한가요? <span>+</span></div>
+      <div class="faq-a">네, 언제든지 취소 가능합니다. 취소 후에도 만료일까지 서비스를 이용할 수 있어요.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">매칭 수수료는 어떻게 정산되나요? <span>+</span></div>
+      <div class="faq-a">기업과 인플루언서 간 계약 성사 후 광고 집행 완료 시점에 정산됩니다. 매달 25일에 수수료를 청구해요.</div>
+    </div>
+  </div>
+</div>
+
+<!-- 결제 모달 -->
+<div class="modal-overlay" id="payModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h2 id="modalTitle">플랜 업그레이드</h2>
+    <div class="sub" id="modalSub">선택하신 플랜으로 업그레이드합니다</div>
+
+    <div class="test-notice">
+      🧪 현재 테스트 모드입니다. 실제 결제가 이루어지지 않아요.
+    </div>
+
+    <div class="price-summary">
+      <div class="price-row"><span id="pPlanName">—</span><span id="pPrice">—</span></div>
+      <div class="price-row total"><span>총 결제금액</span><span id="pTotal">—</span></div>
+    </div>
+
+    <div class="form-group">
+      <label>이메일 / 계정명</label>
+      <input type="text" id="payUserId" placeholder="로그인 계정 입력"/>
+    </div>
+
+    <button class="btn-pay" onclick="processPay()">토스페이먼츠로 결제하기</button>
+  </div>
+</div>
+
+<script>
+let currentType = 'influencer'
+let selectedPlan = null
+
+async function switchType(type, el) {
+  currentType = type
+  document.querySelectorAll('.type-tab').forEach(t=>t.classList.remove('active'))
+  el.classList.add('active')
+  await loadPlans(type)
+}
+
+async function loadPlans(type) {
+  document.getElementById('plansGrid').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">로딩 중...</div>'
+  try {
+    const data = await fetch(`/api/plans?type=${type}`).then(r=>r.json())
+    const plans = data.plans || []
+    document.getElementById('plansGrid').innerHTML = plans.map((p,i) => planCard(p, i===1)).join('')
+  } catch(e) {
+    // 기본 플랜 표시
+    document.getElementById('plansGrid').innerHTML = defaultPlans(type)
+  }
+}
+
+function planCard(plan, isPopular) {
+  import json
+  const features = JSON.parse(plan.features || '[]')
+  const isFree = plan.price === 0
+  const btnClass = isFree ? 'btn-plan-free' : isPopular ? 'btn-plan-primary' : 'btn-plan-outline'
+  const btnText  = isFree ? '현재 플랜' : '시작하기'
+  return `
+    <div class="plan-card ${isPopular?'popular':''}">
+      ${isPopular ? '<div class="popular-badge">⭐ 가장 인기</div>' : ''}
+      <div class="plan-name">${plan.name}</div>
+      <div class="plan-price">${plan.price===0?'무료':`${plan.price.toLocaleString()}<span>원/월</span>`}</div>
+      <div class="plan-desc">${plan.price===0?'기본 기능 무료 제공':plan.name+' 플랜의 모든 기능'}</div>
+      <ul class="plan-features">
+        ${features.map(f=>`<li>${f}</li>`).join('')}
+      </ul>
+      <button class="btn-plan ${btnClass}" onclick="${isFree?'':`openModal(${plan.id},'${plan.name}',${plan.price})`}">${btnText}</button>
+    </div>`
+}
+
+function defaultPlans(type) {
+  if(type==='influencer') return `
+    <div class="plan-card">
+      <div class="plan-name">Free</div>
+      <div class="plan-price">무료</div>
+      <div class="plan-desc">기본 기능 무료</div>
+      <ul class="plan-features"><li>분석 1회</li><li>기본 프로필 노출</li></ul>
+      <button class="btn-plan btn-plan-free">현재 플랜</button>
+    </div>
+    <div class="plan-card popular">
+      <div class="popular-badge">⭐ 가장 인기</div>
+      <div class="plan-name">Basic</div>
+      <div class="plan-price">9,900<span>원/월</span></div>
+      <div class="plan-desc">성장하는 인플루언서를 위해</div>
+      <ul class="plan-features"><li>재분석 무제한</li><li>프리미엄 뱃지</li><li>알림 우선수신</li></ul>
+      <button class="btn-plan btn-plan-primary" onclick="openModal(2,'Basic',9900)">시작하기</button>
+    </div>
+    <div class="plan-card">
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">29,900<span>원/월</span></div>
+      <div class="plan-desc">프로 인플루언서를 위해</div>
+      <ul class="plan-features"><li>상단 노출</li><li>포트폴리오 페이지</li><li>전담 매니저</li></ul>
+      <button class="btn-plan btn-plan-outline" onclick="openModal(3,'Pro',29900)">시작하기</button>
+    </div>`
+  else return `
+    <div class="plan-card">
+      <div class="plan-name">Free</div>
+      <div class="plan-price">무료</div>
+      <div class="plan-desc">소규모 브랜드를 위해</div>
+      <ul class="plan-features"><li>월 5건 탐색</li><li>의뢰 1건</li></ul>
+      <button class="btn-plan btn-plan-free">현재 플랜</button>
+    </div>
+    <div class="plan-card popular">
+      <div class="popular-badge">⭐ 가장 인기</div>
+      <div class="plan-name">Basic</div>
+      <div class="plan-price">49,000<span>원/월</span></div>
+      <div class="plan-desc">성장하는 브랜드를 위해</div>
+      <ul class="plan-features"><li>무제한 탐색</li><li>의뢰 3건</li><li>상세 분석 리포트</li></ul>
+      <button class="btn-plan btn-plan-primary" onclick="openModal(5,'Basic',49000)">시작하기</button>
+    </div>
+    <div class="plan-card">
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">149,000<span>원/월</span></div>
+      <div class="plan-desc">대형 브랜드를 위해</div>
+      <ul class="plan-features"><li>무제한 의뢰</li><li>매칭 보장</li><li>전담 매니저</li></ul>
+      <button class="btn-plan btn-plan-outline" onclick="openModal(6,'Pro',149000)">시작하기</button>
+    </div>`
+}
+
+function openModal(planId, planName, price) {
+  selectedPlan = {id: planId, name: planName, price}
+  document.getElementById('modalTitle').textContent = planName + ' 플랜 구독'
+  document.getElementById('pPlanName').textContent  = planName + ' (월간)'
+  document.getElementById('pPrice').textContent     = price.toLocaleString() + '원'
+  document.getElementById('pTotal').textContent     = price.toLocaleString() + '원'
+
+  // 로그인된 계정 자동 입력
+  const handle = sessionStorage.getItem('inf_handle') || sessionStorage.getItem('company_email') || ''
+  document.getElementById('payUserId').value = handle
+
+  document.getElementById('payModal').className = 'modal-overlay show'
+}
+
+function closeModal() {
+  document.getElementById('payModal').className = 'modal-overlay'
+}
+
+async function processPay() {
+  const userId = document.getElementById('payUserId').value.trim()
+  if(!userId){ alert('계정명 또는 이메일을 입력해 주세요'); return }
+  if(!selectedPlan){ return }
+
+  try {
+    const orderId = 'ORDER-' + Date.now()
+    const res = await fetch('/api/payment/create', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        user_id:      userId,
+        user_type:    currentType,
+        order_id:     orderId,
+        amount:       selectedPlan.price,
+        product_name: selectedPlan.name + ' 플랜',
+      })
+    })
+    const data = await res.json()
+    if(data.error){ alert(data.error); return }
+
+    // 테스트 모드: 바로 성공 처리
+    const confirmRes = await fetch('/api/payment/confirm', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        order_id:    orderId,
+        payment_key: 'TEST-' + orderId,
+        amount:      selectedPlan.price,
+      })
+    })
+    const confirmData = await confirmRes.json()
+    if(confirmData.success) {
+      closeModal()
+      alert(`✅ ${selectedPlan.name} 플랜 구독 완료!\n마이페이지에서 확인하세요.`)
+      location.href = currentType==='influencer' ? '/dashboard' : '/company/dashboard'
+    }
+  } catch(e) { alert('결제 오류: '+e.message) }
+}
+
+function toggleFaq(el) {
+  const answer = el.nextElementSibling
+  const icon   = el.querySelector('span')
+  answer.classList.toggle('open')
+  icon.textContent = answer.classList.contains('open') ? '−' : '+'
+}
+
+loadPlans('influencer')
+</script>
+</body>
+</html>
