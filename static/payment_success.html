@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>결제 완료 — InfluMatch</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--green:#2D6A4F;--bg:#F7FAF8;--card:#FFFFFF;--border:#D8EDE3;--text:#111111;--muted:#777777}
+  body{font-family:'Segoe UI',-apple-system,sans-serif;background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:48px;text-align:center;max-width:420px;width:100%}
+  .icon{font-size:56px;margin-bottom:16px}
+  h1{font-size:24px;font-weight:700;color:var(--text);margin-bottom:8px}
+  p{font-size:14px;color:var(--muted);margin-bottom:28px;line-height:1.7}
+  .info-rows{background:var(--bg);border-radius:10px;padding:16px;margin-bottom:24px;text-align:left}
+  .info-row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)}
+  .info-row:last-child{border-bottom:none}
+  .info-row .k{color:var(--muted)}.info-row .v{font-weight:600}
+  .btn{display:inline-block;background:var(--green);color:#fff;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none}
+  .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 20px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="card" id="loadingCard">
+  <div class="spinner"></div>
+  <h1>결제 확인 중...</h1>
+  <p>잠시만 기다려 주세요</p>
+</div>
+
+<div class="card" id="successCard" style="display:none">
+  <div class="icon">🎉</div>
+  <h1>결제 완료!</h1>
+  <p>멤버십이 활성화되었습니다.<br>지금 바로 모든 기능을 이용해보세요.</p>
+  <div class="info-rows" id="payInfo"></div>
+  <a href="/dashboard" class="btn">마이페이지로 이동 →</a>
+</div>
+
+<div class="card" id="failCard" style="display:none">
+  <div class="icon">❌</div>
+  <h1>결제 실패</h1>
+  <p id="failMsg">결제 처리 중 오류가 발생했습니다.</p>
+  <a href="/pricing" class="btn" style="background:#C0392B">다시 시도하기</a>
+</div>
+
+<script>
+async function confirmPayment() {
+  const params      = new URLSearchParams(location.search)
+  const paymentKey  = params.get('paymentKey')
+  const orderId     = params.get('orderId')
+  const amount      = params.get('amount')
+  const plan        = params.get('plan') || 'Basic'
+  const type        = params.get('type') || 'influencer'
+
+  if(!paymentKey || !orderId || !amount) {
+    showFail('결제 정보가 올바르지 않습니다')
+    return
+  }
+
+  try {
+    const res  = await fetch('/api/payment/confirm', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        payment_key: paymentKey,
+        order_id:    orderId,
+        amount:      parseInt(amount),
+        user_id:     sessionStorage.getItem('inf_handle') || sessionStorage.getItem('company_email') || '',
+        user_type:   type,
+        product_name: plan + ' 플랜',
+      })
+    })
+    const data = await res.json()
+
+    if(data.success) {
+      document.getElementById('loadingCard').style.display = 'none'
+      document.getElementById('successCard').style.display = 'block'
+      document.getElementById('payInfo').innerHTML = `
+        <div class="info-row"><span class="k">플랜</span><span class="v">${plan}</span></div>
+        <div class="info-row"><span class="k">결제금액</span><span class="v">${parseInt(amount).toLocaleString()}원</span></div>
+        <div class="info-row"><span class="k">주문번호</span><span class="v" style="font-size:11px">${orderId}</span></div>
+      `
+    } else {
+      showFail(data.error || '결제 확인 실패')
+    }
+  } catch(e) {
+    showFail('서버 오류: ' + e.message)
+  }
+}
+
+function showFail(msg) {
+  document.getElementById('loadingCard').style.display = 'none'
+  document.getElementById('failCard').style.display    = 'block'
+  document.getElementById('failMsg').textContent       = msg
+}
+
+confirmPayment()
+</script>
+</body>
+</html>

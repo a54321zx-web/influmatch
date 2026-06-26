@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>결제 — InfluMatch</title>
+<script src="https://js.tosspayments.com/v2/standard"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--navy:#1B3A2D;--green:#2D6A4F;--gold:#B7935A;--danger:#C0392B;--bg:#F7FAF8;--card:#FFFFFF;--border:#D8EDE3;--text:#111111;--muted:#777777}
+  body{font-family:'Segoe UI',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+  nav{background:var(--card);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;height:60px}
+  .logo{font-size:18px;font-weight:700;color:var(--navy);text-decoration:none}.logo span{color:var(--green)}
+  .page{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 16px}
+  .pay-wrap{display:grid;grid-template-columns:1fr 1fr;gap:24px;width:100%;max-width:800px}
+  .order-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px}
+  .order-card h2{font-size:18px;font-weight:700;color:var(--text);margin-bottom:24px}
+  .order-item{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);font-size:14px}
+  .order-item:last-child{border-bottom:none}
+  .order-item .key{color:var(--muted)}
+  .order-item .val{font-weight:600}
+  .total-row{display:flex;justify-content:space-between;padding:16px 0;font-size:16px;font-weight:700;border-top:2px solid var(--border);margin-top:8px}
+  .total-row .val{color:var(--green);font-size:20px}
+
+  .pay-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px}
+  .pay-card h2{font-size:18px;font-weight:700;color:var(--text);margin-bottom:24px}
+  .form-group{margin-bottom:16px}
+  .form-group label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase}
+  .form-group input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:8px;font-size:14px;outline:none;transition:border-color 0.2s}
+  .form-group input:focus{border-color:var(--green)}
+
+  .pay-methods{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
+  .pay-method{padding:12px;border:2px solid var(--border);border-radius:8px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);transition:all 0.2s}
+  .pay-method:hover{border-color:var(--green);color:var(--green)}
+  .pay-method.active{border-color:var(--green);background:#E8F3ED;color:var(--green)}
+
+  .btn-pay{width:100%;background:var(--green);color:#fff;border:none;padding:14px;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;transition:background 0.2s;margin-top:8px}
+  .btn-pay:hover{background:var(--navy)}
+  .btn-pay:disabled{background:#ccc;cursor:not-allowed}
+
+  .secure-badge{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:12px;justify-content:center}
+
+  @media(max-width:680px){.pay-wrap{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="logo">InfluMatch<span>.</span></a>
+</nav>
+
+<div class="page">
+  <div class="pay-wrap">
+
+    <!-- 주문 요약 -->
+    <div class="order-card">
+      <h2>주문 요약</h2>
+      <div class="order-item"><span class="key">상품</span><span class="val" id="oProduct">—</span></div>
+      <div class="order-item"><span class="key">플랜</span><span class="val" id="oPlan">—</span></div>
+      <div class="order-item"><span class="key">결제 주기</span><span class="val">월간</span></div>
+      <div class="order-item"><span class="key">다음 결제일</span><span class="val" id="oNextDate">—</span></div>
+      <div class="total-row"><span>결제 금액</span><span class="val" id="oTotal">—</span></div>
+    </div>
+
+    <!-- 결제 -->
+    <div class="pay-card">
+      <h2>결제 수단 선택</h2>
+
+      <div class="pay-methods">
+        <div class="pay-method active" onclick="selectMethod('카드',this)">💳 신용카드</div>
+        <div class="pay-method" onclick="selectMethod('계좌이체',this)">🏦 계좌이체</div>
+        <div class="pay-method" onclick="selectMethod('토스페이',this)">💙 토스페이</div>
+        <div class="pay-method" onclick="selectMethod('카카오페이',this)">💛 카카오페이</div>
+      </div>
+
+      <div class="form-group">
+        <label>이름</label>
+        <input type="text" id="payerName" placeholder="홍길동"/>
+      </div>
+      <div class="form-group">
+        <label>이메일</label>
+        <input type="email" id="payerEmail" placeholder="example@email.com"/>
+      </div>
+
+      <button class="btn-pay" id="btnPay" onclick="startPayment()">
+        토스페이먼츠로 결제하기
+      </button>
+      <div class="secure-badge">🔒 토스페이먼츠 보안 결제</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let selectedMethod = '카드'
+let planInfo = {}
+
+function selectMethod(method, el) {
+  selectedMethod = method
+  document.querySelectorAll('.pay-method').forEach(m=>m.classList.remove('active'))
+  el.classList.add('active')
+}
+
+// URL 파라미터에서 플랜 정보 읽기
+function loadPlanInfo() {
+  const params = new URLSearchParams(location.search)
+  const plan   = params.get('plan') || 'Basic'
+  const type   = params.get('type') || 'influencer'
+  const prices = {
+    'influencer': {'Basic':9900, 'Pro':29900},
+    'company':    {'Basic':49000, 'Pro':149000}
+  }
+  const price = prices[type]?.[plan] || 9900
+  const nextDate = new Date()
+  nextDate.setMonth(nextDate.getMonth()+1)
+
+  planInfo = {plan, type, price,
+    orderId: 'INFLUMATCH-' + Date.now(),
+    productName: `InfluMatch ${plan} (${type==='influencer'?'인플루언서':'기업'})`
+  }
+
+  document.getElementById('oProduct').textContent = 'InfluMatch 멤버십'
+  document.getElementById('oPlan').textContent    = plan + ' 플랜'
+  document.getElementById('oNextDate').textContent = nextDate.toLocaleDateString('ko-KR')
+  document.getElementById('oTotal').textContent   = price.toLocaleString() + '원'
+
+  // 로그인 정보 자동 입력
+  const email = sessionStorage.getItem('inf_email') || sessionStorage.getItem('company_email') || ''
+  if(email) document.getElementById('payerEmail').value = email
+}
+
+async function startPayment() {
+  const name  = document.getElementById('payerName').value.trim()
+  const email = document.getElementById('payerEmail').value.trim()
+  if(!name||!email){ alert('이름과 이메일을 입력해 주세요'); return }
+
+  document.getElementById('btnPay').disabled = true
+  document.getElementById('btnPay').textContent = '결제창 열는 중...'
+
+  try {
+    // 서버에서 클라이언트 키 받기
+    const keyRes = await fetch('/api/payment/client-key').then(r=>r.json())
+    const clientKey = keyRes.client_key
+
+    const tossPayments = TossPayments(clientKey)
+    const payment = tossPayments.payment({customerKey: email})
+
+    await payment.requestPayment({
+      method: selectedMethod,
+      amount: {currency:'KRW', value: planInfo.price},
+      orderId:     planInfo.orderId,
+      orderName:   planInfo.productName,
+      customerName: name,
+      customerEmail: email,
+      successUrl: window.location.origin + '/payment/success?plan=' + planInfo.plan + '&type=' + planInfo.type,
+      failUrl:    window.location.origin + '/payment/fail',
+    })
+  } catch(e) {
+    alert('결제 오류: ' + e.message)
+    document.getElementById('btnPay').disabled = false
+    document.getElementById('btnPay').textContent = '토스페이먼츠로 결제하기'
+  }
+}
+
+loadPlanInfo()
+</script>
+</body>
+</html>

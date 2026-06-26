@@ -230,14 +230,14 @@ function defaultPlans(type) {
       <div class="plan-price">9,900<span>원/월</span></div>
       <div class="plan-desc">성장하는 인플루언서를 위해</div>
       <ul class="plan-features"><li>재분석 무제한</li><li>프리미엄 뱃지</li><li>알림 우선수신</li></ul>
-      <button class="btn-plan btn-plan-primary" onclick="openModal(2,'Basic',9900)">시작하기</button>
+      <button class="btn-plan btn-plan-primary" onclick="goPayment(2,'Basic',9900)">시작하기</button>
     </div>
     <div class="plan-card">
       <div class="plan-name">Pro</div>
       <div class="plan-price">29,900<span>원/월</span></div>
       <div class="plan-desc">프로 인플루언서를 위해</div>
       <ul class="plan-features"><li>상단 노출</li><li>포트폴리오 페이지</li><li>전담 매니저</li></ul>
-      <button class="btn-plan btn-plan-outline" onclick="openModal(3,'Pro',29900)">시작하기</button>
+      <button class="btn-plan btn-plan-outline" onclick="goPayment(3,'Pro',29900)">시작하기</button>
     </div>`
   else return `
     <div class="plan-card">
@@ -253,18 +253,18 @@ function defaultPlans(type) {
       <div class="plan-price">49,000<span>원/월</span></div>
       <div class="plan-desc">성장하는 브랜드를 위해</div>
       <ul class="plan-features"><li>무제한 탐색</li><li>의뢰 3건</li><li>상세 분석 리포트</li></ul>
-      <button class="btn-plan btn-plan-primary" onclick="openModal(5,'Basic',49000)">시작하기</button>
+      <button class="btn-plan btn-plan-primary" onclick="goPayment(5,'Basic',49000)">시작하기</button>
     </div>
     <div class="plan-card">
       <div class="plan-name">Pro</div>
       <div class="plan-price">149,000<span>원/월</span></div>
       <div class="plan-desc">대형 브랜드를 위해</div>
       <ul class="plan-features"><li>무제한 의뢰</li><li>매칭 보장</li><li>전담 매니저</li></ul>
-      <button class="btn-plan btn-plan-outline" onclick="openModal(6,'Pro',149000)">시작하기</button>
+      <button class="btn-plan btn-plan-outline" onclick="goPayment(6,'Pro',149000)">시작하기</button>
     </div>`
 }
 
-function openModal(planId, planName, price) {
+function goPayment(planId, planName, price) { location.href='/payment?plan='+planName+'&type='+currentType; } function openModal_unused(planId, planName, price) {
   selectedPlan = {id: planId, name: planName, price}
   document.getElementById('modalTitle').textContent = planName + ' 플랜 구독'
   document.getElementById('pPlanName').textContent  = planName + ' (월간)'

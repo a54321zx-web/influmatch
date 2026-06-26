@@ -5,6 +5,7 @@ Playwright 없이 웹사이트 + API만 운영
 """
 
 import os
+import httpx
 from datetime import datetime
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -15,7 +16,7 @@ from auth import (
     create_token, get_current_user, get_current_user_optional
 )
 
-app = FastAPI(title="InfluMatch v5.9 — AI 인플루언서 마케팅 플랫폼")
+app = FastAPI(title="InfluMatch v6.0 — AI 인플루언서 마케팅 플랫폼")
 
 # 정적 파일
 if os.path.exists("static"):
@@ -60,6 +61,18 @@ async def page_analyze():
 @app.get("/pricing")
 async def page_pricing():
     return FileResponse("static/pricing.html")
+
+@app.get("/payment")
+async def page_payment():
+    return FileResponse("static/payment.html")
+
+@app.get("/payment/success")
+async def page_payment_success():
+    return FileResponse("static/payment_success.html")
+
+@app.get("/payment/fail")
+async def page_payment_fail():
+    return FileResponse("static/payment_fail.html")
 
 
 # ══════════════════════════════════════════════════════════════
@@ -267,6 +280,71 @@ async def api_admin_campaigns():
 
 
 # ── 멤버십 + 결제 API ─────────────────────────────────────
+# ── 토스페이먼츠 결제 API ─────────────────────────────────
+@app.get("/api/payment/client-key")
+async def api_client_key():
+    """프론트엔드에 클라이언트 키 전달"""
+    client_key = os.environ.get("TOSS_CLIENT_KEY", "")
+    if not client_key:
+        return {"error": "결제 키가 설정되지 않았습니다"}
+    return {"client_key": client_key}
+
+
+@app.post("/api/payment/confirm")
+async def api_payment_confirm(data: dict):
+    """토스페이먼츠 결제 승인 API 호출"""
+    payment_key  = data.get("payment_key")
+    order_id     = data.get("order_id")
+    amount       = data.get("amount")
+    user_id      = data.get("user_id", "")
+    user_type    = data.get("user_type", "influencer")
+    product_name = data.get("product_name", "")
+
+    if not all([payment_key, order_id, amount]):
+        return {"error": "필수 파라미터 누락"}
+
+    secret_key = os.environ.get("TOSS_SECRET_KEY", "")
+    if not secret_key:
+        return {"error": "결제 시크릿 키가 설정되지 않았습니다"}
+
+    # 토스페이먼츠 결제 승인 API 호출
+    import base64
+    credentials = base64.b64encode(f"{secret_key}:".encode()).decode()
+
+    try:
+        async with httpx.AsyncClient() as client:
+            res = await client.post(
+                f"https://api.tosspayments.com/v1/payments/confirm",
+                headers={
+                    "Authorization": f"Basic {credentials}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "paymentKey": payment_key,
+                    "orderId":    order_id,
+                    "amount":     amount,
+                }
+            )
+            toss_data = res.json()
+
+        if res.status_code == 200:
+            # DB에 결제 내역 저장
+            db.create_payment({
+                "user_id":      user_id,
+                "user_type":    user_type,
+                "order_id":     order_id,
+                "amount":       amount,
+                "product_name": product_name,
+            })
+            db.confirm_payment(order_id, payment_key, amount)
+            return {"success": True, "payment": toss_data}
+        else:
+            return {"error": toss_data.get("message", "결제 승인 실패")}
+
+    except Exception as e:
+        return {"error": f"결제 처리 오류: {str(e)}"}
+
+
 @app.get("/api/plans")
 async def api_get_plans(type: str = "influencer"):
     plans = db.get_plans(type)
@@ -287,23 +365,6 @@ async def api_payment_create(data: dict):
             return {"error": f"{f} 필드가 필요합니다"}
     row_id = db.create_payment(data)
     return {"success": True, "id": row_id, "order_id": data["order_id"]}
-
-
-@app.post("/api/payment/confirm")
-async def api_payment_confirm(data: dict):
-    """
-    토스페이먼츠 결제 승인 후 호출
-    실제 운영 시 토스 API로 검증 필요
-    """
-    order_id    = data.get("order_id")
-    payment_key = data.get("payment_key")
-    amount      = data.get("amount")
-    if not all([order_id, payment_key, amount]):
-        return {"error": "필수 파라미터 누락"}
-    success = db.confirm_payment(order_id, payment_key, amount)
-    if success:
-        return {"success": True, "message": "결제 완료"}
-    return {"error": "결제 확인 실패"}
 
 
 @app.get("/api/revenue/stats")
