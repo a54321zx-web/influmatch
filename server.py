@@ -7,6 +7,12 @@ Playwright 없이 웹사이트 + API만 운영
 import os
 import httpx
 from datetime import datetime
+
+try:
+    from youtube_engine import analyze_youtube_channel
+    YOUTUBE_ENABLED = True
+except ImportError:
+    YOUTUBE_ENABLED = False
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
