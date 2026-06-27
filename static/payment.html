@@ -91,7 +91,7 @@
 </div>
 
 <script>
-let selectedMethod = '카드'
+let selectedMethod = 'CARD'
 let planInfo = {}
 
 function selectMethod(method, el) {
@@ -147,12 +147,18 @@ async function startPayment() {
     await payment.requestPayment({
       method: selectedMethod,
       amount: {currency:'KRW', value: planInfo.price},
-      orderId:     planInfo.orderId,
-      orderName:   planInfo.productName,
+      orderId:      planInfo.orderId,
+      orderName:    planInfo.productName,
       customerName: name,
       customerEmail: email,
       successUrl: window.location.origin + '/payment/success?plan=' + planInfo.plan + '&type=' + planInfo.type,
       failUrl:    window.location.origin + '/payment/fail',
+      card: {
+        useEscrow: false,
+        flowMode: 'DEFAULT',
+        useCardPoint: false,
+        useAppCardOnly: false,
+      },
     })
   } catch(e) {
     alert('결제 오류: ' + e.message)

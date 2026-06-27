@@ -16,7 +16,7 @@ from auth import (
     create_token, get_current_user, get_current_user_optional
 )
 
-app = FastAPI(title="InfluMatch v6.0 — AI 인플루언서 마케팅 플랫폼")
+app = FastAPI(title="InfluMatch v6.1 — AI 인플루언서 마케팅 플랫폼")
 
 # 정적 파일
 if os.path.exists("static"):
@@ -57,6 +57,30 @@ async def page_admin():
 @app.get("/analyze")
 async def page_analyze():
     return FileResponse("static/index.html")
+
+@app.get("/youtube")
+async def page_youtube():
+    return FileResponse("static/youtube.html")
+
+
+# ── 유튜브 분석 API ───────────────────────────────────────
+@app.get("/api/youtube/analyze/{channel}")
+async def api_youtube_analyze(channel: str):
+    """유튜브 채널 분석"""
+    if not YOUTUBE_ENABLED:
+        return {"error": "YouTube 엔진을 불러올 수 없습니다"}
+    yt_key = os.environ.get("YOUTUBE_API_KEY", "")
+    if not yt_key:
+        return {"error": "YouTube API 키가 설정되지 않았습니다"}
+    result = await analyze_youtube_channel(channel)
+    return result
+
+
+@app.get("/api/youtube/check")
+async def api_youtube_check():
+    """YouTube API 키 설정 확인"""
+    key = os.environ.get("YOUTUBE_API_KEY", "")
+    return {"enabled": bool(key), "message": "정상" if key else "API 키 미설정"}
 
 @app.get("/pricing")
 async def page_pricing():
