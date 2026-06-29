@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>무료 AI 인플루언서 분석 — InfluMatch</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--green:#2D6A4F;--navy:#1B3A2D;--gold:#B7935A;--bg:#F7FAF8;--card:#FFFFFF;--border:#D8EDE3;--text:#111111;--muted:#777777}
+  body{font-family:'Segoe UI',-apple-system,sans-serif;background:var(--bg);color:var(--text)}
+
+  /* 네비 */
+  nav{background:var(--card);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+  .logo{font-size:17px;font-weight:700;color:var(--navy);text-decoration:none}.logo span{color:var(--green)}
+  .btn-nav{background:var(--green);color:#fff;padding:7px 18px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none}
+
+  /* 히어로 */
+  .hero{background:linear-gradient(160deg,#1B3A2D 0%,#2D6A4F 100%);padding:64px 24px 56px;text-align:center;position:relative;overflow:hidden}
+  .hero::before{content:'';position:absolute;top:-60px;right:-60px;width:300px;height:300px;background:rgba(255,255,255,0.04);border-radius:50%}
+  .hero::after{content:'';position:absolute;bottom:-40px;left:-40px;width:200px;height:200px;background:rgba(255,255,255,0.03);border-radius:50%}
+  .hero-badge{display:inline-block;background:rgba(255,255,255,0.15);color:#fff;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:20px;border:1px solid rgba(255,255,255,0.2)}
+  .hero h1{font-size:36px;font-weight:800;color:#fff;line-height:1.25;margin-bottom:14px}
+  .hero h1 span{color:#7AC99A}
+  .hero p{font-size:16px;color:rgba(255,255,255,0.8);margin-bottom:32px;line-height:1.7;max-width:480px;margin-left:auto;margin-right:auto}
+  .btn-hero{display:inline-block;background:#fff;color:var(--navy);padding:14px 36px;border-radius:12px;font-size:16px;font-weight:700;text-decoration:none;transition:all 0.2s;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
+  .btn-hero:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,0.2)}
+  .hero-sub{font-size:12px;color:rgba(255,255,255,0.5);margin-top:14px}
+
+  /* 수치 */
+  .stats{display:flex;justify-content:center;gap:0;background:var(--card);border-bottom:1px solid var(--border)}
+  .stat{flex:1;text-align:center;padding:20px 12px;border-right:1px solid var(--border)}
+  .stat:last-child{border-right:none}
+  .stat .num{font-size:24px;font-weight:800;color:var(--green)}
+  .stat .label{font-size:11px;color:var(--muted);margin-top:3px}
+
+  /* 섹션 */
+  .section{padding:56px 24px;max-width:680px;margin:0 auto}
+  .section-title{text-align:center;margin-bottom:36px}
+  .section-title h2{font-size:26px;font-weight:700;color:var(--text);margin-bottom:8px}
+  .section-title p{font-size:14px;color:var(--muted);line-height:1.7}
+
+  /* 혜택 카드 */
+  .benefits{display:flex;flex-direction:column;gap:14px;margin-bottom:40px}
+  .benefit{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;display:flex;align-items:flex-start;gap:14px}
+  .benefit-icon{font-size:28px;flex-shrink:0;margin-top:2px}
+  .benefit h3{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px}
+  .benefit p{font-size:13px;color:var(--muted);line-height:1.6}
+
+  /* 샘플 결과 카드 */
+  .sample-card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:40px;box-shadow:0 4px 20px rgba(0,0,0,0.06)}
+  .sample-header{background:linear-gradient(135deg,#1B3A2D,#2D6A4F);padding:20px 24px;display:flex;align-items:center;gap:14px}
+  .sample-avatar{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;flex-shrink:0}
+  .sample-info h3{font-size:16px;font-weight:700;color:#fff}
+  .sample-info p{font-size:12px;color:rgba(255,255,255,0.7);margin-top:2px}
+  .sample-grade{margin-left:auto;width:44px;height:44px;border-radius:50%;background:#2D6A4F;border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff}
+  .sample-body{padding:20px 24px}
+  .sample-scores{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+  .score-item{background:var(--bg);border-radius:10px;padding:12px;text-align:center}
+  .score-item .sv{font-size:20px;font-weight:700;color:var(--text)}
+  .score-item .sl{font-size:10px;color:var(--muted);margin-top:2px}
+  .bar-row{margin-bottom:10px}
+  .bar-label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;color:var(--muted)}
+  .bar-track{height:7px;background:#E8F3ED;border-radius:4px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:4px}
+  .sample-price{background:#E8F3ED;border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center}
+  .sample-price .label{font-size:12px;color:var(--navy);font-weight:600}
+  .sample-price .price{font-size:17px;font-weight:700;color:var(--green)}
+  .sample-watermark{text-align:center;font-size:11px;color:var(--muted);padding:10px 0 0;font-style:italic}
+
+  /* 후기 */
+  .reviews{display:flex;flex-direction:column;gap:12px;margin-bottom:40px}
+  .review{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px}
+  .review-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .review-avatar{width:36px;height:36px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+  .review-info .name{font-size:13px;font-weight:600;color:var(--text)}
+  .review-info .meta{font-size:11px;color:var(--muted)}
+  .review-stars{margin-left:auto;color:#F5A623;font-size:13px}
+  .review p{font-size:13px;color:var(--muted);line-height:1.6}
+
+  /* CTA */
+  .cta{background:linear-gradient(135deg,#1B3A2D,#2D6A4F);border-radius:20px;padding:44px 24px;text-align:center;margin-bottom:40px}
+  .cta h2{font-size:26px;font-weight:800;color:#fff;margin-bottom:10px}
+  .cta p{font-size:14px;color:rgba(255,255,255,0.75);margin-bottom:28px;line-height:1.7}
+  .cta .btn-hero{font-size:15px;padding:13px 32px}
+
+  /* FAQ */
+  .faq-item{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden}
+  .faq-q{padding:15px 18px;font-size:13px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between}
+  .faq-q:hover{background:#F7FAF8}
+  .faq-a{padding:0 18px 14px;font-size:13px;color:var(--muted);line-height:1.7;display:none}
+  .faq-a.open{display:block}
+
+  footer{background:var(--card);border-top:1px solid var(--border);padding:24px;text-align:center;font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="logo">InfluMatch<span>.</span></a>
+  <a href="/join" class="btn-nav">무료로 시작하기</a>
+</nav>
+
+<!-- 히어로 -->
+<div class="hero">
+  <div class="hero-badge">🤖 AI 신뢰도 검증 플랫폼</div>
+  <h1>내 인스타 계정,<br><span>진짜 가치가 얼마인지</span><br>알고 싶지 않으세요?</h1>
+  <p>AI가 팔로워 300명을 직접 분석해서<br>가짜 팔로워 비율, 광고 적정 단가, 등급을 무료로 알려드립니다.</p>
+  <a href="/join" class="btn-hero">무료 AI 분석 받기 →</a>
+  <div class="hero-sub">✅ 가입비 없음 &nbsp;·&nbsp; 신용카드 불필요 &nbsp;·&nbsp; 3분 완료</div>
+</div>
+
+<!-- 통계 -->
+<div class="stats">
+  <div class="stat"><div class="num">300명</div><div class="label">팔로워 실제 분석</div></div>
+  <div class="stat"><div class="num">5단계</div><div class="label">정밀 스코어링</div></div>
+  <div class="stat"><div class="num">S~D</div><div class="label">신뢰도 등급</div></div>
+  <div class="stat"><div class="num">무료</div><div class="label">첫 분석</div></div>
+</div>
+
+<!-- 혜택 -->
+<div class="section">
+  <div class="section-title">
+    <h2>이런 걸 알 수 있어요</h2>
+    <p>광고 문의가 와도 단가를 얼마나 불러야 할지 모르셨나요?<br>AI가 시장가 기준으로 딱 알려드려요.</p>
+  </div>
+  <div class="benefits">
+    <div class="benefit">
+      <div class="benefit-icon">🔍</div>
+      <div>
+        <h3>가짜 팔로워 정확히 알기</h3>
+        <p>팔로워 300명을 직접 샘플링해서 봇 계정, 비활성 계정 비율을 정확히 측정해요. 광고주에게 당당하게 보여줄 수 있어요.</p>
+      </div>
+    </div>
+    <div class="benefit">
+      <div class="benefit-icon">💰</div>
+      <div>
+        <h3>적정 광고 단가 산출</h3>
+        <p>피드, 스토리, 릴스 각각의 적정 단가를 시장가 기준으로 자동 계산해드려요. 더 이상 눈치 보며 단가 못 부르는 일 없어요.</p>
+      </div>
+    </div>
+    <div class="benefit">
+      <div class="benefit-icon">🏆</div>
+      <div>
+        <h3>S~D 신뢰도 등급 부여</h3>
+        <p>참여율, 팔로워 품질, 댓글 품질, 일관성을 종합해서 객관적인 등급을 받아요. 포트폴리오에 바로 활용하세요.</p>
+      </div>
+    </div>
+    <div class="benefit">
+      <div class="benefit-icon">🏢</div>
+      <div>
+        <h3>기업 광고주와 자동 매칭</h3>
+        <p>등록 후 조건에 맞는 광고 의뢰가 들어오면 자동으로 알림을 받아요. 직접 영업 안 해도 됩니다.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 샘플 결과 -->
+  <div class="section-title">
+    <h2>분석 결과 미리보기</h2>
+    <p>등록하면 이런 결과를 받아볼 수 있어요</p>
+  </div>
+
+  <div class="sample-card">
+    <div class="sample-header">
+      <div class="sample-avatar">김</div>
+      <div class="sample-info">
+        <h3>김민지 님의 분석 결과</h3>
+        <p>@minji.beauty · 뷰티 · 팔로워 4.2만명</p>
+      </div>
+      <div class="sample-grade" style="background:#2D6A4F">A</div>
+    </div>
+    <div class="sample-body">
+      <div class="sample-scores">
+        <div class="score-item"><div class="sv" style="color:#2D6A4F">71점</div><div class="sl">신뢰도 점수</div></div>
+        <div class="score-item"><div class="sv">MICRO</div><div class="sl">팔로워 티어</div></div>
+        <div class="score-item"><div class="sv">4.2%</div><div class="sl">참여율(ER)</div></div>
+        <div class="score-item"><div class="sv" style="color:#2D6A4F">🟢 양호</div><div class="sl">가짜팔로워</div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label"><span>참여도 (ER)</span><span>78점</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:78%;background:#2D6A4F"></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label"><span>팔로워 품질</span><span>85점</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:85%;background:#2D6A4F"></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label"><span>댓글 품질</span><span>62점</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:62%;background:#B7935A"></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label"><span>업로드 일관성</span><span>70점</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:70%;background:#B7935A"></div></div>
+      </div>
+      <div class="sample-price">
+        <div>
+          <div class="label">📸 피드 적정 단가</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">뷰티 카테고리 프리미엄 적용</div>
+        </div>
+        <div class="price">540,000원</div>
+      </div>
+      <div class="sample-watermark">* 실제 분석 시 본인 계정 기준으로 산출됩니다</div>
+    </div>
+  </div>
+
+  <!-- 후기 -->
+  <div class="section-title">
+    <h2>인플루언서 후기</h2>
+  </div>
+  <div class="reviews">
+    <div class="review">
+      <div class="review-top">
+        <div class="review-avatar">이</div>
+        <div class="review-info">
+          <div class="name">이수진 @sujin.daily</div>
+          <div class="meta">라이프스타일 · 팔로워 8,200명</div>
+        </div>
+        <div class="review-stars">★★★★★</div>
+      </div>
+      <p>광고 문의 올 때마다 단가를 얼마나 불러야 할지 몰랐는데, 분석 결과 보고 자신 있게 단가를 제시할 수 있게 됐어요. 가짜 팔로워도 생각보다 적어서 안심했고요!</p>
+    </div>
+    <div class="review">
+      <div class="review-top">
+        <div class="review-avatar">박</div>
+        <div class="review-info">
+          <div class="name">박준호 @junho.food</div>
+          <div class="meta">음식 · 팔로워 1.5만명</div>
+        </div>
+        <div class="review-stars">★★★★★</div>
+      </div>
+      <p>등록하고 2주 만에 식품 브랜드에서 광고 의뢰가 왔어요. 직접 영업 안 해도 된다는 게 진짜 편하네요. 분석 리포트도 클라이언트한테 바로 보내줄 수 있어서 좋았어요.</p>
+    </div>
+    <div class="review">
+      <div class="review-top">
+        <div class="review-avatar">최</div>
+        <div class="review-info">
+          <div class="name">최지은 @jieun.beauty</div>
+          <div class="meta">뷰티 · 팔로워 3.1만명</div>
+        </div>
+        <div class="review-stars">★★★★☆</div>
+      </div>
+      <p>A등급 받았는데 생각보다 높아서 깜짝 놀랐어요. 팔로워 수 대비 참여율이 높다고 하더라고요. 포트폴리오에 넣으니까 브랜드 미팅할 때 훨씬 설득력 있게 됐어요.</p>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta">
+    <h2>지금 바로 무료로 받아보세요</h2>
+    <p>3분이면 충분해요.<br>내 계정의 진짜 가치를 AI가 분석해드립니다.</p>
+    <a href="/join" class="btn-hero">무료 AI 분석 시작하기 →</a>
+  </div>
+
+  <!-- FAQ -->
+  <div class="section-title">
+    <h2>자주 묻는 질문</h2>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">정말 무료인가요? <span>+</span></div>
+    <div class="faq-a">첫 분석은 완전 무료예요. 신용카드도 필요 없어요. 재분석이나 프리미엄 기능은 유료지만, 기본 분석과 마켓플레이스 등록은 무료로 이용하실 수 있어요.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">팔로워가 적어도 괜찮나요? <span>+</span></div>
+    <div class="faq-a">네! 팔로워 500명 이상이면 분석 가능해요. 요즘 브랜드들은 팔로워 수보다 진성 팔로워 비율과 참여율을 더 중요하게 봐요. 나노 인플루언서 광고 수요가 오히려 더 높아지고 있어요.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">분석까지 얼마나 걸리나요? <span>+</span></div>
+    <div class="faq-a">등록 후 AI 분석은 최대 24시간 내 완료돼요. 분석 완료 시 알림을 받으실 수 있어요.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">내 계정 정보가 안전한가요? <span>+</span></div>
+    <div class="faq-a">인스타그램 계정명만 입력받아요. 비밀번호나 개인정보는 요구하지 않아요. 분석은 공개된 정보만 활용합니다.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">광고 의뢰는 어떻게 들어오나요? <span>+</span></div>
+    <div class="faq-a">기업이 카테고리, 예산, 등급 조건으로 의뢰를 등록하면 조건에 맞는 인플루언서에게 자동으로 알림이 가요. 마이페이지에서 확인 후 수락하면 됩니다.</div>
+  </div>
+</div>
+
+<footer>
+  © 2026 InfluMatch · AI 인플루언서 마케팅 플랫폼<br>
+  <a href="/" style="color:var(--muted)">홈으로</a> &nbsp;·&nbsp;
+  <a href="/join" style="color:var(--green)">인플루언서 등록</a> &nbsp;·&nbsp;
+  <a href="/company/join" style="color:var(--muted)">기업으로 시작</a>
+</footer>
+
+<script>
+function toggleFaq(el) {
+  const a = el.nextElementSibling
+  const icon = el.querySelector('span')
+  a.classList.toggle('open')
+  icon.textContent = a.classList.contains('open') ? '−' : '+'
+}
+</script>
+</body>
+</html>
