@@ -6,6 +6,9 @@ import random
 from datetime import datetime
 from collections import Counter
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from playwright.async_api import async_playwright
 import pandas as pd
 from fastapi import FastAPI

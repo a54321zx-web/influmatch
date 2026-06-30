@@ -8,7 +8,9 @@ import sqlite3
 import os
 from datetime import datetime
 
-DB_FILE = "platform.db"
+import os as _os
+_DATA_DIR = "/app/data" if _os.path.isdir("/app/data") else "."
+DB_FILE = _os.path.join(_DATA_DIR, "platform.db")
 
 
 def get_conn():
