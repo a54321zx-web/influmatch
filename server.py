@@ -189,10 +189,47 @@ async def api_reanalyze(handle: str):
     inf = db.get_influencer_by_handle(handle)
     if not inf:
         return {"error": "등록된 인플루언서가 없습니다"}
+    db.mark_pending(handle)
     return {
         "success": True,
-        "message": "재분석 요청이 접수됐습니다. 최대 24시간 내 업데이트됩니다."
+        "message": "재분석 요청이 접수됐습니다. PC에서 동기화 시 반영됩니다."
     }
+
+
+# ══════════════════════════════════════════════════════════════
+# 로컬 ↔ 클라우드 동기화 API
+# (engyn.py가 로컬 PC에서 호출, SYNC_SECRET으로 보호)
+# ══════════════════════════════════════════════════════════════
+def _check_sync_secret(secret: str):
+    expected = os.environ.get("SYNC_SECRET", "")
+    if not expected or secret != expected:
+        return False
+    return True
+
+
+@app.get("/api/sync/pending")
+async def api_sync_pending(secret: str = ""):
+    """분석 대기 중('pending')인 인플루언서 계정 목록 반환"""
+    if not _check_sync_secret(secret):
+        return {"error": "인증 실패"}
+    pending = db.get_pending_influencers()
+    return {"pending": pending, "total": len(pending)}
+
+
+@app.post("/api/sync/result")
+async def api_sync_result(data: dict):
+    """로컬 분석 완료 결과를 클라우드 DB에 반영"""
+    if not _check_sync_secret(data.get("secret", "")):
+        return {"error": "인증 실패"}
+
+    handle = data.get("insta_handle", "")
+    result = data.get("result", {})
+    account_data = data.get("account_data", {})
+    if not handle or not result:
+        return {"error": "필수 데이터 누락"}
+
+    db.update_analysis(handle, result, account_data)
+    return {"success": True, "message": f"@{handle} 동기화 완료"}
 
 
 # ══════════════════════════════════════════════════════════════

@@ -13,9 +13,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from report_generator import generate_reports
 from session_manager import ensure_valid_session, is_session_expired
+from auth import hash_password, verify_password, create_token, get_current_user, get_current_user_optional
+from fastapi import Depends, Request
 import database as db
 
-app = FastAPI(title="insta_engine v5.6 — AI 인플루언서 스코어링")
+app = FastAPI(title="insta_engine v5.7 — AI 인플루언서 스코어링")
 
 # 정적 파일 서빙
 if os.path.exists("static"):
@@ -887,6 +889,13 @@ async def _run_single(username: str, count: int,
     result = score_influencer(account_data, follower_sample)
     generate_reports(username, result, account_data, len(follower_sample))
 
+    # ☁️ 클라우드 동기화 — 분석 결과를 Railway DB에 반영
+    try:
+        from cloud_sync import push_result
+        await push_result(username, result, account_data)
+    except Exception as e:
+        print(f"   ⚠️  클라우드 동기화 모듈 오류: {e}")
+
     adp = result["ad_price"]
     src = "👤 직접지정" if category else "🤖 자동분류"
     print(f"\n  ✅ {result['grade']}등급 {result['final_score']}점 | "
@@ -959,10 +968,12 @@ async def batch_analyze(usernames: list[str], count: int = 30,
 @app.post("/api/join")
 async def api_join(data: dict):
     """인플루언서 회원가입 + 자동 분석"""
-    required = ["name", "email", "insta_handle"]
+    required = ["name", "email", "insta_handle", "password"]
     for field in required:
         if not data.get(field):
             return {"error": f"{field} 필드가 필요합니다"}
+    if len(data["password"]) < 6:
+        return {"error": "비밀번호는 6자 이상이어야 합니다"}
 
     handle = data["insta_handle"].replace("@", "").strip()
 
@@ -972,7 +983,8 @@ async def api_join(data: dict):
     if db.get_influencer_by_email(data["email"]):
         return {"error": "이미 등록된 이메일입니다"}
 
-    # DB에 저장
+    # 비밀번호 암호화 후 DB 저장
+    hashed_pw = hash_password(data["password"])
     row_id = db.create_influencer({
         "name":         data["name"],
         "email":        data["email"],
@@ -980,6 +992,7 @@ async def api_join(data: dict):
         "insta_handle": handle,
         "category":     data.get("category", ""),
     })
+    db.set_influencer_password(handle, hashed_pw)
 
     # 자동 분석 실행
     try:
@@ -994,9 +1007,12 @@ async def api_join(data: dict):
             db.update_analysis(handle, result, result.get("account_stats", {}))
             adp = result.get("ad_price", {})
             cat = result.get("category", {})
+            # JWT 토큰 발급
+            token = create_token({"sub": handle, "type": "influencer", "email": data["email"]})
             return {
                 "success":       True,
                 "id":            row_id,
+                "token":         token,
                 "grade":         result["grade"],
                 "final_score":   result["final_score"],
                 "tier":          result["tier"],
@@ -1011,6 +1027,26 @@ async def api_join(data: dict):
 
     except Exception as e:
         return {"error": f"분석 오류: {str(e)}"}
+
+
+@app.post("/api/login")
+async def api_influencer_login(data: dict):
+    """인플루언서 로그인 → JWT 토큰 반환"""
+    handle = (data.get("insta_handle") or "").replace("@","").strip()
+    password = data.get("password","")
+    if not handle or not password:
+        return {"error": "계정명과 비밀번호를 입력해 주세요"}
+
+    inf = db.get_influencer_by_handle(handle)
+    if not inf:
+        return {"error": "등록되지 않은 계정입니다"}
+
+    hashed = db.get_influencer_password(handle)
+    if not hashed or not verify_password(password, hashed):
+        return {"error": "비밀번호가 올바르지 않습니다"}
+
+    token = create_token({"sub": handle, "type": "influencer", "email": inf["email"]})
+    return {"success": True, "token": token, "name": inf["name"], "handle": handle}
 
 
 @app.get("/api/marketplace")
@@ -1030,10 +1066,15 @@ async def api_marketplace(
 async def api_company_join(data: dict):
     if not data.get("email") or not data.get("company_name"):
         return {"error": "이메일과 회사명은 필수입니다"}
+    if not data.get("password") or len(data["password"]) < 6:
+        return {"error": "비밀번호는 6자 이상이어야 합니다"}
     if db.get_company_by_email(data["email"]):
         return {"error": "이미 등록된 이메일입니다"}
+    hashed_pw = hash_password(data["password"])
     row_id = db.create_company(data)
-    return {"success": True, "id": row_id, "company_name": data["company_name"]}
+    db.set_company_password(data["email"], hashed_pw)
+    token = create_token({"sub": data["email"], "type": "company", "name": data["company_name"]})
+    return {"success": True, "id": row_id, "token": token, "company_name": data["company_name"]}
 
 
 @app.post("/api/company/login")
@@ -1041,9 +1082,11 @@ async def api_company_login(data: dict):
     company = db.get_company_by_email(data.get("email",""))
     if not company:
         return {"error": "등록된 이메일이 없습니다"}
-    if company["name"] != data.get("company_name","").strip():
-        return {"error": "회사명이 일치하지 않습니다"}
-    return {"success": True, "company_name": company["name"]}
+    hashed = db.get_company_password(data.get("email",""))
+    if hashed and not verify_password(data.get("password",""), hashed):
+        return {"error": "비밀번호가 올바르지 않습니다"}
+    token = create_token({"sub": data["email"], "type": "company", "name": company["name"]})
+    return {"success": True, "token": token, "company_name": company["name"]}
 
 
 @app.post("/api/company/request")
@@ -1146,7 +1189,7 @@ async def root():
     if os.path.exists("static/index.html"):
         return FileResponse("static/index.html")
     return {
-        "engine": "insta_engine v5.6",
+        "engine": "insta_engine v5.7",
         "steps":  {
             "STEP1": "게시물 실측 (좋아요/댓글/해시태그)",
             "STEP2": "댓글 품질 분석 (진성/봇 분류)",
@@ -1162,9 +1205,46 @@ async def root():
     }
 
 
+async def sync_pending_from_cloud():
+    """클라우드에 가입했지만 분석 안 된(pending) 계정들을 일괄 분석"""
+    from cloud_sync import fetch_pending_handles
+
+    print("☁️  클라우드에서 분석 대기 목록 가져오는 중...")
+    pending = await fetch_pending_handles()
+
+    if not pending:
+        print("✅ 대기 중인 분석 요청이 없습니다.")
+        return
+
+    print(f"📋 대기 중인 계정 {len(pending)}개 발견:")
+    for p in pending:
+        print(f"   - @{p['insta_handle']} (카테고리: {p.get('category') or '자동분류'})")
+
+    for i, p in enumerate(pending):
+        handle = p["insta_handle"]
+        category = p.get("category") or None
+        print(f"\n[{i+1}/{len(pending)}] @{handle} 분석 시작...")
+        try:
+            await _run_single(handle, count=50, category=category)
+        except Exception as e:
+            print(f"   ❌ @{handle} 분석 실패: {e}")
+        if i < len(pending) - 1:
+            wait = random.uniform(5, 10)
+            print(f"   {wait:.1f}초 대기...")
+            await asyncio.sleep(wait)
+
+    print(f"\n🎉 동기화 완료 — {len(pending)}개 계정 처리됨")
+
+
 if __name__ == "__main__":
+    import sys
+
+    if "--sync" in sys.argv:
+        asyncio.run(sync_pending_from_cloud())
+        sys.exit(0)
+
     import uvicorn
-    print("🌐 insta_engine v5.6 서버 구동 중...")
+    print("🌐 insta_engine v5.7 서버 구동 중...")
     print("   → GET  http://127.0.0.1:8000/analyze/{계정명}?count=50")
     print("   → POST http://127.0.0.1:8000/batch")
     print("   → GET  http://127.0.0.1:8000/docs")
