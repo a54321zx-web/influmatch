@@ -22,7 +22,7 @@ from auth import (
     create_token, get_current_user, get_current_user_optional
 )
 
-app = FastAPI(title="InfluMatch v6.2 — AI 인플루언서 마케팅 플랫폼")
+app = FastAPI(title="InfluMatch v6.3 — AI 인플루언서 마케팅 플랫폼")
 
 # 정적 파일
 if os.path.exists("static"):
@@ -67,6 +67,30 @@ async def page_analyze():
 @app.get("/influencer")
 async def page_influencer_landing():
     return FileResponse("static/influencer_landing.html")
+
+@app.get("/terms")
+async def page_terms():
+    return FileResponse("static/terms.html")
+
+@app.get("/privacy")
+async def page_privacy():
+    return FileResponse("static/privacy.html")
+
+@app.get("/faq")
+async def page_faq():
+    return FileResponse("static/faq.html")
+
+@app.get("/contact")
+async def page_contact():
+    return FileResponse("static/contact.html")
+
+@app.get("/about")
+async def page_about():
+    return FileResponse("static/about.html")
+
+@app.get("/forgot")
+async def page_forgot():
+    return FileResponse("static/forgot.html")
 
 @app.get("/youtube")
 async def page_youtube():
@@ -194,6 +218,46 @@ async def api_reanalyze(handle: str):
         "success": True,
         "message": "재분석 요청이 접수됐습니다. PC에서 동기화 시 반영됩니다."
     }
+
+
+# ── 계정 찾기 API ─────────────────────────────────────────────
+@app.post("/api/find-id")
+async def api_find_id(data: dict):
+    """이메일로 아이디(계정명) 찾기"""
+    email = data.get("email", "").strip()
+    if not email:
+        return {"error": "이메일을 입력해 주세요"}
+    inf = db.get_influencer_by_email(email)
+    if not inf:
+        # 기업 계정도 확인
+        company = db.get_company_by_email(email)
+        if company:
+            return {"error": "인플루언서가 아닌 기업 계정입니다. 기업 로그인 페이지를 이용해 주세요."}
+        return {"error": "해당 이메일로 등록된 계정이 없습니다"}
+    return {
+        "insta_handle": inf["insta_handle"],
+        "joined_at": (inf.get("joined_at") or "")[:10],
+    }
+
+
+@app.post("/api/reset-password")
+async def api_reset_password(data: dict):
+    """비밀번호 재설정 — 이메일 + 계정명 확인 후 변경"""
+    email  = data.get("email", "").strip()
+    handle = data.get("insta_handle", "").replace("@","").strip()
+    new_pw = data.get("new_password", "")
+    if not email or not handle or not new_pw:
+        return {"error": "모든 항목을 입력해 주세요"}
+    if len(new_pw) < 6:
+        return {"error": "비밀번호는 6자 이상이어야 합니다"}
+    inf = db.get_influencer_by_handle(handle)
+    if not inf:
+        return {"error": "등록되지 않은 계정입니다"}
+    if inf["email"] != email:
+        return {"error": "이메일이 일치하지 않습니다"}
+    hashed = hash_password(new_pw)
+    db.set_influencer_password(handle, hashed)
+    return {"success": True}
 
 
 # ══════════════════════════════════════════════════════════════

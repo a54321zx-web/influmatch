@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAQ — InfluMatch</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--green:#2D6A4F;--navy:#1B3A2D;--bg:#F7FAF8;--card:#FFFFFF;--border:#D8EDE3;--text:#111111;--muted:#777777}
+  body{font-family:'Segoe UI',-apple-system,sans-serif;background:var(--bg);color:var(--text)}
+  nav{background:var(--card);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;height:60px}
+  .logo{font-size:18px;font-weight:700;color:var(--navy);text-decoration:none}.logo span{color:var(--green)}
+  .back{margin-left:auto;color:var(--muted);text-decoration:none;font-size:14px}
+  .page{max-width:760px;margin:0 auto;padding:48px 24px}
+  h1{font-size:28px;font-weight:700;margin-bottom:8px}
+  .sub{font-size:15px;color:var(--muted);margin-bottom:40px}
+  .tabs{display:flex;gap:8px;margin-bottom:28px;flex-wrap:wrap}
+  .tab-btn{padding:8px 18px;border:1px solid var(--border);border-radius:20px;font-size:13px;cursor:pointer;background:var(--card);color:var(--muted);transition:all 0.2s}
+  .tab-btn.active{background:var(--green);color:#fff;border-color:var(--green)}
+  .faq-section{display:none}.faq-section.active{display:block}
+  .faq-item{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden}
+  .faq-q{padding:18px 20px;font-size:14px;font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center;color:var(--text)}
+  .faq-q:hover{background:#F0F7F3}
+  .faq-a{padding:0 20px 16px;font-size:14px;color:var(--muted);line-height:1.8;display:none}
+  .faq-a.open{display:block}
+  .icon{font-size:18px;color:var(--green);flex-shrink:0}
+  .contact-box{background:#E8F3ED;border-radius:14px;padding:28px;text-align:center;margin-top:40px}
+  .contact-box h3{font-size:18px;font-weight:700;color:var(--navy);margin-bottom:8px}
+  .contact-box p{font-size:14px;color:var(--muted);margin-bottom:16px}
+  .btn{display:inline-block;background:var(--green);color:#fff;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none}
+</style>
+</head>
+<body>
+<nav><a href="/" class="logo">InfluMatch<span>.</span></a><a href="/" class="back">← 홈으로</a></nav>
+<div class="page">
+  <h1>자주 묻는 질문</h1>
+  <p class="sub">궁금한 점을 빠르게 찾아보세요</p>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('all',this)">전체</button>
+    <button class="tab-btn" onclick="switchTab('influencer',this)">인플루언서</button>
+    <button class="tab-btn" onclick="switchTab('company',this)">기업</button>
+    <button class="tab-btn" onclick="switchTab('payment',this)">결제</button>
+    <button class="tab-btn" onclick="switchTab('analysis',this)">분석</button>
+  </div>
+
+  <div class="faq-section active" id="sec-all">
+    <!-- 인플루언서 -->
+    <div class="faq-item" data-cat="influencer">
+      <div class="faq-q" onclick="toggle(this)"><span>정말 무료로 이용할 수 있나요?</span><span class="icon">+</span></div>
+      <div class="faq-a">네, 첫 AI 분석과 마켓플레이스 등록은 완전 무료입니다. 신용카드도 필요 없어요. 재분석이나 상단 노출 등 프리미엄 기능은 유료로 제공됩니다.</div>
+    </div>
+    <div class="faq-item" data-cat="influencer">
+      <div class="faq-q" onclick="toggle(this)"><span>팔로워가 적어도 가입할 수 있나요?</span><span class="icon">+</span></div>
+      <div class="faq-a">팔로워 500명 이상이면 분석이 가능합니다. 요즘 브랜드들은 팔로워 수보다 진성 팔로워 비율과 참여율을 더 중요하게 봐요. 나노 인플루언서(1천~1만명) 광고 수요가 오히려 높아지고 있어요.</div>
+    </div>
+    <div class="faq-item" data-cat="influencer">
+      <div class="faq-q" onclick="toggle(this)"><span>분석까지 얼마나 걸리나요?</span><span class="icon">+</span></div>
+      <div class="faq-a">등록 후 AI 분석은 최대 24시간 내 완료됩니다. 분석이 완료되면 마이페이지에서 결과를 확인하실 수 있어요.</div>
+    </div>
+    <div class="faq-item" data-cat="influencer">
+      <div class="faq-q" onclick="toggle(this)"><span>내 계정 비밀번호가 필요한가요?</span><span class="icon">+</span></div>
+      <div class="faq-a">아니요! 인스타그램 계정명(핸들)만 입력받습니다. 비밀번호나 로그인 정보는 절대 요구하지 않아요. 분석은 공개된 정보만 활용합니다.</div>
+    </div>
+    <div class="faq-item" data-cat="influencer">
+      <div class="faq-q" onclick="toggle(this)"><span>광고 의뢰는 어떻게 들어오나요?</span><span class="icon">+</span></div>
+      <div class="faq-a">기업이 카테고리, 예산, 등급 조건으로 의뢰를 등록하면 조건에 맞는 인플루언서에게 자동으로 알림이 전송됩니다. 마이페이지에서 확인 후 수락하시면 됩니다.</div>
+    </div>
+    <div class="faq-item" data-cat="company">
+      <div class="faq-q" onclick="toggle(this)"><span>기업 가입은 어떻게 하나요?</span><span class="icon">+</span></div>
+      <div class="faq-a">상단 메뉴의 "기업으로 시작하기"를 클릭해 회사명, 이메일, 업종 등을 입력하면 바로 이용 가능합니다. 사업자등록증은 필요하지 않습니다.</div>
+    </div>
+    <div class="faq-item" data-cat="company">
+      <div class="faq-q" onclick="toggle(this)"><span>광고 의뢰 등록 후 매칭까지 얼마나 걸리나요?</span><span class="icon">+</span></div>
+      <div class="faq-a">의뢰 등록 즉시 조건에 맞는 인플루언서에게 알림이 발송됩니다. 인플루언서의 수락 여부에 따라 매칭 시간이 다를 수 있으며, 보통 1~3일 이내에 연락이 옵니다.</div>
+    </div>
+    <div class="faq-item" data-cat="payment">
+      <div class="faq-q" onclick="toggle(this)"><span>결제 수단은 어떤 것이 있나요?</span><span class="icon">+</span></div>
+      <div class="faq-a">신용카드, 계좌이체, 토스페이, 카카오페이 등 토스페이먼츠에서 지원하는 모든 결제 수단을 이용하실 수 있습니다.</div>
+    </div>
+    <div class="faq-item" data-cat="payment">
+      <div class="faq-q" onclick="toggle(this)"><span>구독 취소는 어떻게 하나요?</span><span class="icon">+</span></div>
+      <div class="faq-a">마이페이지 → 구독 관리에서 언제든지 취소하실 수 있습니다. 취소 후에도 남은 기간 동안은 서비스를 계속 이용하실 수 있어요.</div>
+    </div>
+    <div class="faq-item" data-cat="analysis">
+      <div class="faq-q" onclick="toggle(this)"><span>AI 분석은 어떻게 이루어지나요?</span><span class="icon">+</span></div>
+      <div class="faq-a">팔로워 300명을 무작위 샘플링하여 ① 참여율(ER) ② 팔로워 품질 ③ 댓글 진성도 ④ 업로드 일관성을 분석합니다. 각 항목에 가중치를 적용해 0~100점의 신뢰도 점수와 S~D 등급을 산출합니다.</div>
+    </div>
+    <div class="faq-item" data-cat="analysis">
+      <div class="faq-q" onclick="toggle(this)"><span>광고 단가는 어떻게 산출되나요?</span><span class="icon">+</span></div>
+      <div class="faq-a">팔로워 수(티어), AI 등급, 카테고리를 기반으로 국내 인플루언서 마케팅 시장 실거래가를 분석해 산출합니다. 뷰티·패션 카테고리는 광고주 수요가 높아 프리미엄(+20%)이 적용됩니다.</div>
+    </div>
+  </div>
+
+  <div class="contact-box">
+    <h3>원하는 답변을 찾지 못하셨나요?</h3>
+    <p>고객센터로 문의해 주시면 빠르게 도와드릴게요</p>
+    <a href="/contact" class="btn">1:1 문의하기</a>
+  </div>
+</div>
+<script>
+function switchTab(cat, el) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'))
+  el.classList.add('active')
+  if(cat==='all') {
+    document.querySelectorAll('.faq-item').forEach(i=>i.style.display='block')
+  } else {
+    document.querySelectorAll('.faq-item').forEach(i=>{
+      i.style.display = i.dataset.cat===cat ? 'block' : 'none'
+    })
+  }
+}
+function toggle(el) {
+  const a=el.nextElementSibling, icon=el.querySelector('.icon')
+  a.classList.toggle('open')
+  icon.textContent = a.classList.contains('open') ? '−' : '+'
+}
+</script>
+</body>
+</html>

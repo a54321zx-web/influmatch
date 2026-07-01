@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>서비스 소개 — InfluMatch</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--green:#2D6A4F;--navy:#1B3A2D;--bg:#F7FAF8;--card:#FFFFFF;--border:#D8EDE3;--text:#111111;--muted:#777777}
+  body{font-family:'Segoe UI',-apple-system,sans-serif;background:var(--bg);color:var(--text)}
+  nav{background:var(--card);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;height:60px;gap:24px}
+  .logo{font-size:18px;font-weight:700;color:var(--navy);text-decoration:none}.logo span{color:var(--green)}
+  nav a{color:var(--muted);text-decoration:none;font-size:14px}
+  .btn-nav{margin-left:auto;background:var(--green);color:#fff!important;padding:8px 20px;border-radius:8px;font-weight:600}
+  .hero{background:linear-gradient(135deg,#1B3A2D,#2D6A4F);padding:80px 24px;text-align:center}
+  .hero h1{font-size:40px;font-weight:800;color:#fff;margin-bottom:14px;line-height:1.3}
+  .hero h1 span{color:#7AC99A}
+  .hero p{font-size:17px;color:rgba(255,255,255,0.8);max-width:520px;margin:0 auto;line-height:1.7}
+  .section{max-width:900px;margin:0 auto;padding:64px 24px}
+  .section h2{font-size:28px;font-weight:700;color:var(--text);margin-bottom:12px;text-align:center}
+  .section .desc{font-size:15px;color:var(--muted);text-align:center;margin-bottom:48px;line-height:1.7}
+  .mission-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:60px}
+  .mission-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;text-align:center}
+  .mission-icon{font-size:40px;margin-bottom:14px}
+  .mission-card h3{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:8px}
+  .mission-card p{font-size:13px;color:var(--muted);line-height:1.7}
+  .diff-table{width:100%;border-collapse:collapse;margin-bottom:60px}
+  .diff-table th{background:#E8F3ED;padding:14px;font-size:14px;font-weight:700;color:var(--navy);text-align:center;border:1px solid var(--border)}
+  .diff-table td{padding:13px 16px;font-size:13px;border:1px solid var(--border);color:#333;text-align:center}
+  .diff-table tr:nth-child(even) td{background:#F9FCF9}
+  .check{color:var(--green);font-weight:700;font-size:16px}
+  .cross{color:#ccc;font-size:16px}
+  .num-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;background:linear-gradient(135deg,#1B3A2D,#2D6A4F);border-radius:20px;padding:40px;margin-bottom:60px}
+  .num-item{text-align:center}
+  .num-item .num{font-size:36px;font-weight:800;color:#7AC99A}
+  .num-item .label{font-size:12px;color:rgba(255,255,255,0.7);margin-top:6px}
+  .cta-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:48px;text-align:center}
+  .cta-box h2{font-size:26px;font-weight:700;margin-bottom:12px}
+  .cta-box p{font-size:15px;color:var(--muted);margin-bottom:28px}
+  .btn{display:inline-block;background:var(--green);color:#fff;padding:13px 32px;border-radius:10px;font-size:15px;font-weight:700;text-decoration:none;margin:0 6px}
+  .btn-outline{background:transparent;color:var(--green);border:2px solid var(--green)}
+  footer{background:var(--card);border-top:1px solid var(--border);padding:24px;text-align:center;font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="logo">InfluMatch<span>.</span></a>
+  <a href="/marketplace">탐색</a>
+  <a href="/pricing">요금제</a>
+  <a href="/faq">FAQ</a>
+  <a href="/join" class="btn-nav">무료 시작</a>
+</nav>
+
+<div class="hero">
+  <h1>가짜 없는 인플루언서 마케팅,<br><span>InfluMatch</span>가 만들어갑니다</h1>
+  <p>AI가 직접 팔로워 300명을 분석해서 진짜 영향력 있는 인플루언서만 검증합니다</p>
+</div>
+
+<div class="section">
+  <h2>우리가 해결하는 문제</h2>
+  <p class="desc">기업의 67%가 가짜 팔로워로 인한 광고 손실을 경험합니다.<br>InfluMatch는 AI로 이 문제를 근본적으로 해결합니다.</p>
+
+  <div class="mission-grid">
+    <div class="mission-card">
+      <div class="mission-icon">🔍</div>
+      <h3>가짜 팔로워 탐지</h3>
+      <p>봇 계정, 비활성 계정, 구매 팔로워를 AI가 자동으로 탐지합니다. 더 이상 눈속임에 속지 마세요.</p>
+    </div>
+    <div class="mission-card">
+      <div class="mission-icon">💰</div>
+      <h3>적정 단가 산출</h3>
+      <p>시장가 기준으로 피드/스토리/릴스 광고 단가를 자동 산출합니다. 협상의 기준이 생깁니다.</p>
+    </div>
+    <div class="mission-card">
+      <div class="mission-icon">🎯</div>
+      <h3>조건별 자동 매칭</h3>
+      <p>카테고리, 예산, 등급 조건을 입력하면 딱 맞는 인플루언서를 자동으로 연결합니다.</p>
+    </div>
+  </div>
+
+  <div class="num-grid">
+    <div class="num-item"><div class="num">300명</div><div class="label">팔로워 실제 분석</div></div>
+    <div class="num-item"><div class="num">5단계</div><div class="label">정밀 스코어링</div></div>
+    <div class="num-item"><div class="num">2개</div><div class="label">플랫폼 지원 (인스타/유튜브)</div></div>
+    <div class="num-item"><div class="num">10%</div><div class="label">매칭 수수료</div></div>
+  </div>
+
+  <h2>경쟁사 대비 우위</h2>
+  <p class="desc" style="margin-bottom:24px">국내 인플루언서 마케팅 플랫폼과의 차이점</p>
+  <table class="diff-table">
+    <thead>
+      <tr><th>기능</th><th>InfluMatch</th><th>레뷰</th><th>태그바이</th><th>일반 MCN</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>AI 가짜팔로워 탐지</td><td><span class="check">✅</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+      <tr><td>팔로워 직접 샘플링</td><td><span class="check">✅ 300명</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+      <tr><td>광고 단가 자동 산출</td><td><span class="check">✅</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+      <tr><td>S~D 신뢰도 등급</td><td><span class="check">✅</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+      <tr><td>유튜브 분석</td><td><span class="check">✅</span></td><td><span class="check">✅</span></td><td><span class="check">✅</span></td><td><span class="cross">—</span></td></tr>
+      <tr><td>인플루언서 마켓플레이스</td><td><span class="check">✅</span></td><td><span class="check">✅</span></td><td><span class="check">✅</span></td><td><span class="cross">—</span></td></tr>
+      <tr><td>무료 첫 분석</td><td><span class="check">✅</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="cta-box">
+    <h2>지금 바로 시작하세요</h2>
+    <p>인플루언서라면 무료 AI 분석을, 기업이라면 검증된 인플루언서 탐색을 시작해보세요.</p>
+    <a href="/join" class="btn">인플루언서 무료 등록</a>
+    <a href="/company/join" class="btn btn-outline">기업으로 시작하기</a>
+  </div>
+</div>
+
+<footer>© 2026 InfluMatch · AI 인플루언서 마케팅 플랫폼 · contact@influmatch.kr</footer>
+</body>
+</html>

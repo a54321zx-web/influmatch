@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>계정 찾기 — InfluMatch</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--green:#2D6A4F;--navy:#1B3A2D;--bg:#F7FAF8;--card:#FFFFFF;--border:#D8EDE3;--text:#111111;--muted:#777777;--danger:#C0392B}
+  body{font-family:'Segoe UI',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+  nav{background:var(--card);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;height:60px}
+  .logo{font-size:18px;font-weight:700;color:var(--navy);text-decoration:none}.logo span{color:var(--green)}
+  .back{margin-left:auto;color:var(--muted);text-decoration:none;font-size:14px}
+  .page{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:40px;width:100%;max-width:440px}
+  .card-icon{font-size:44px;text-align:center;margin-bottom:16px}
+  h1{font-size:22px;font-weight:700;text-align:center;margin-bottom:6px}
+  .sub{font-size:14px;color:var(--muted);text-align:center;margin-bottom:28px;line-height:1.6}
+  .tabs{display:flex;background:#F7FAF8;border-radius:10px;padding:4px;margin-bottom:24px}
+  .tab-btn{flex:1;padding:9px;border:none;background:transparent;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);transition:all 0.2s}
+  .tab-btn.active{background:var(--card);color:var(--green);box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+  .form-group{margin-bottom:16px}
+  .form-group label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase}
+  .form-group input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:8px;font-size:14px;outline:none}
+  .form-group input:focus{border-color:var(--green)}
+  .btn-submit{width:100%;background:var(--green);color:#fff;border:none;padding:13px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px}
+  .btn-submit:hover{background:var(--navy)}
+  .result-box{display:none;background:#E8F3ED;border-radius:10px;padding:16px;margin-top:16px;font-size:14px;color:var(--navy);line-height:1.7}
+  .result-box.show{display:block}
+  .error-box{display:none;background:#FEF0F0;border:1px solid #F5C6C6;border-radius:8px;padding:12px;color:var(--danger);font-size:13px;margin-top:12px}
+  .error-box.show{display:block}
+  .link-row{text-align:center;font-size:13px;color:var(--muted);margin-top:20px}
+  .link-row a{color:var(--green);font-weight:600;text-decoration:none}
+</style>
+</head>
+<body>
+<nav><a href="/" class="logo">InfluMatch<span>.</span></a><a href="/dashboard" class="back">← 로그인으로</a></nav>
+<div class="page">
+  <div class="card">
+    <div class="card-icon">🔑</div>
+    <h1>계정 찾기</h1>
+    <p class="sub">가입 시 사용한 이메일로<br>계정 정보를 찾을 수 있어요</p>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('id',this)">아이디 찾기</button>
+      <button class="tab-btn" onclick="switchTab('pw',this)">비밀번호 재설정</button>
+    </div>
+
+    <!-- 아이디 찾기 -->
+    <div id="idForm">
+      <div class="form-group">
+        <label>가입 이메일</label>
+        <input type="email" id="idEmail" placeholder="가입 시 사용한 이메일" onkeydown="if(event.key==='Enter')findId()"/>
+      </div>
+      <button class="btn-submit" onclick="findId()">아이디(계정명) 찾기</button>
+      <div class="result-box" id="idResult"></div>
+      <div class="error-box" id="idError"></div>
+    </div>
+
+    <!-- 비밀번호 재설정 -->
+    <div id="pwForm" style="display:none">
+      <div class="form-group">
+        <label>가입 이메일</label>
+        <input type="email" id="pwEmail" placeholder="가입 시 사용한 이메일"/>
+      </div>
+      <div class="form-group">
+        <label>인스타그램 계정명</label>
+        <input type="text" id="pwHandle" placeholder="계정명 (@ 제외)"/>
+      </div>
+      <div class="form-group">
+        <label>새 비밀번호</label>
+        <input type="password" id="newPw" placeholder="6자 이상 입력"/>
+      </div>
+      <div class="form-group">
+        <label>비밀번호 확인</label>
+        <input type="password" id="newPwConfirm" placeholder="비밀번호 재입력" onkeydown="if(event.key==='Enter')resetPw()"/>
+      </div>
+      <button class="btn-submit" onclick="resetPw()">비밀번호 재설정</button>
+      <div class="result-box" id="pwResult"></div>
+      <div class="error-box" id="pwError"></div>
+    </div>
+
+    <div class="link-row">
+      계정이 없으신가요? <a href="/join">무료 가입하기</a>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchTab(type, el) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'))
+  el.classList.add('active')
+  document.getElementById('idForm').style.display = type==='id'?'block':'none'
+  document.getElementById('pwForm').style.display = type==='pw'?'block':'none'
+}
+
+async function findId() {
+  const email = document.getElementById('idEmail').value.trim()
+  if(!email){ showErr('idError','이메일을 입력해 주세요'); return }
+  try {
+    const res  = await fetch('/api/find-id', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email})
+    })
+    const data = await res.json()
+    if(data.error){ showErr('idError', data.error); return }
+    const r = document.getElementById('idResult')
+    r.innerHTML = `✅ 찾은 계정 정보<br><br>
+      <b>인스타그램 계정:</b> @${data.insta_handle}<br>
+      <b>가입일:</b> ${data.joined_at}`
+    r.className = 'result-box show'
+    document.getElementById('idError').className = 'error-box'
+  } catch(e) { showErr('idError','서버 오류: '+e.message) }
+}
+
+async function resetPw() {
+  const email    = document.getElementById('pwEmail').value.trim()
+  const handle   = document.getElementById('pwHandle').value.trim().replace('@','')
+  const newPw    = document.getElementById('newPw').value
+  const confirm  = document.getElementById('newPwConfirm').value
+  if(!email||!handle||!newPw){ showErr('pwError','모든 항목을 입력해 주세요'); return }
+  if(newPw.length < 6){ showErr('pwError','비밀번호는 6자 이상이어야 합니다'); return }
+  if(newPw !== confirm){ showErr('pwError','비밀번호가 일치하지 않습니다'); return }
+  try {
+    const res  = await fetch('/api/reset-password', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email, insta_handle: handle, new_password: newPw})
+    })
+    const data = await res.json()
+    if(data.error){ showErr('pwError', data.error); return }
+    const r = document.getElementById('pwResult')
+    r.innerHTML = '✅ 비밀번호가 재설정되었습니다!<br>새 비밀번호로 로그인해 주세요.'
+    r.className = 'result-box show'
+    document.getElementById('pwError').className = 'error-box'
+  } catch(e) { showErr('pwError','서버 오류: '+e.message) }
+}
+
+function showErr(id, msg) {
+  const el = document.getElementById(id)
+  el.textContent = '❌ ' + msg
+  el.className = 'error-box show'
+}
+</script>
+</body>
+</html>
