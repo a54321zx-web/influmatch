@@ -22,7 +22,7 @@ from auth import (
     create_token, get_current_user, get_current_user_optional
 )
 
-app = FastAPI(title="InfluMatch v6.4 — AI 인플루언서 마케팅 플랫폼")
+app = FastAPI(title="InfluMatch v6.5 — AI 인플루언서 마케팅 플랫폼")
 
 # 정적 파일
 if os.path.exists("static"):
@@ -269,8 +269,8 @@ async def api_reset_password(data: dict):
 # (engyn.py가 로컬 PC에서 호출, SYNC_SECRET으로 보호)
 # ══════════════════════════════════════════════════════════════
 def _check_sync_secret(secret: str):
-    expected = os.environ.get("SYNC_SECRET", "")
-    if not expected or secret != expected:
+    expected = os.environ.get("SYNC_SECRET", "040cd8b5285f2c3e930dbbc1bd0057a6500288013d0d723a").strip()
+    if not expected or secret.strip() != expected:
         return False
     return True
 

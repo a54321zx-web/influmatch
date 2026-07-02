@@ -7,7 +7,7 @@ import os
 import httpx
 
 CLOUD_URL   = os.environ.get("CLOUD_URL", "https://railway-up-production-c373.up.railway.app")
-SYNC_SECRET = os.environ.get("SYNC_SECRET", "")
+SYNC_SECRET = os.environ.get("SYNC_SECRET", "040cd8b5285f2c3e930dbbc1bd0057a6500288013d0d723a").strip()
 
 
 async def fetch_pending_handles() -> list[dict]:
@@ -15,6 +15,7 @@ async def fetch_pending_handles() -> list[dict]:
     if not SYNC_SECRET:
         print("⚠️  SYNC_SECRET 환경변수가 없습니다. .env 파일을 확인하세요.")
         return []
+    print(f"   🔑 SYNC_SECRET: {SYNC_SECRET[:8]}...")
     try:
         async with httpx.AsyncClient(timeout=15) as client:
             res = await client.get(f"{CLOUD_URL}/api/sync/pending", params={"secret": SYNC_SECRET})
