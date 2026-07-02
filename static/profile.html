@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>인플루언서 프로필 — InfluMatch</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--navy:#1B3A2D;--green:#2D6A4F;--gold:#B7935A;--danger:#C0392B;--bg:#F7FAF8;--card:#FFFFFF;--border:#D8EDE3;--text:#111111;--muted:#777777}
+  body{font-family:'Segoe UI',-apple-system,sans-serif;background:var(--bg);color:var(--text)}
+  nav{background:var(--card);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;height:60px;gap:24px}
+  .logo{font-size:18px;font-weight:700;color:var(--navy);text-decoration:none}.logo span{color:var(--green)}
+  nav a{color:var(--muted);text-decoration:none;font-size:14px}
+  .btn-nav{margin-left:auto;background:var(--green);color:#fff!important;padding:8px 20px;border-radius:8px;font-weight:600}
+
+  .page{max-width:900px;margin:0 auto;padding:32px 24px}
+
+  /* 헤더 */
+  .profile-header{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px;display:flex;align-items:flex-start;gap:24px;margin-bottom:20px}
+  .avatar{width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#1B3A2D,#2D6A4F);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;color:#fff;flex-shrink:0}
+  .profile-info{flex:1}
+  .profile-name{font-size:24px;font-weight:800;color:var(--text);margin-bottom:4px}
+  .profile-handle{font-size:14px;color:var(--muted);margin-bottom:10px}
+  .profile-badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+  .badge-grade{color:#fff}
+  .badge-tier{background:#E8F3ED;color:var(--green)}
+  .badge-cat{background:#F0F0F0;color:#555}
+  .profile-bio{font-size:13px;color:var(--muted);line-height:1.7}
+  .profile-actions{display:flex;flex-direction:column;gap:8px;min-width:140px}
+  .btn-contact{background:var(--green);color:#fff;border:none;padding:11px 20px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;text-align:center;text-decoration:none;display:block}
+  .btn-insta{background:transparent;color:var(--green);border:1px solid var(--green);padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;display:block}
+
+  /* KPI 카드 */
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+  .kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center}
+  .kpi .val{font-size:24px;font-weight:700;color:var(--text);margin-bottom:4px}
+  .kpi .lbl{font-size:11px;color:var(--muted)}
+
+  /* 점수 분석 */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+  .section-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px}
+  .section-card h3{font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+  .bar-row{margin-bottom:12px}
+  .bar-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+  .bar-label span{color:var(--muted)}
+  .bar-track{height:8px;background:#E8F3ED;border-radius:4px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:4px;transition:width 0.8s ease}
+
+  /* 광고 단가 */
+  .price-row{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--border)}
+  .price-row:last-child{border-bottom:none}
+  .price-type{font-size:13px;color:var(--muted)}
+  .price-val{font-size:16px;font-weight:700;color:var(--text)}
+
+  /* 리스크 */
+  .risk-low{color:#2D6A4F;background:#E8F3ED;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+  .risk-med{color:#B7935A;background:#FDF3E3;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+  .risk-high{color:#C0392B;background:#FDECEA;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+
+  /* 의뢰 모달 */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;align-items:center;justify-content:center}
+  .modal-overlay.show{display:flex}
+  .modal{background:var(--card);border-radius:16px;padding:32px;width:100%;max-width:400px;position:relative}
+  .modal h2{font-size:18px;font-weight:700;margin-bottom:6px}
+  .modal .sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+  .modal-close{position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)}
+  .form-group{margin-bottom:14px}
+  .form-group label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase}
+  .form-group input,.form-group textarea,.form-group select{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:10px 13px;border-radius:8px;font-size:13px;outline:none;font-family:inherit}
+  .form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:var(--green)}
+  .btn-send{width:100%;background:var(--green);color:#fff;border:none;padding:13px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px}
+
+  /* 빈 상태 */
+  .not-found{text-align:center;padding:80px 24px}
+  .not-found .icon{font-size:56px;margin-bottom:16px}
+  .not-found h2{font-size:22px;font-weight:700;margin-bottom:8px}
+  .not-found p{font-size:14px;color:var(--muted);margin-bottom:24px}
+  .btn-back{display:inline-block;background:var(--green);color:#fff;padding:11px 24px;border-radius:10px;font-size:14px;font-weight:700;text-decoration:none}
+
+  .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite;margin:80px auto}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="logo">InfluMatch<span>.</span></a>
+  <a href="/marketplace">인플루언서 탐색</a>
+  <a href="/youtube">유튜브 분석</a>
+  <a href="/pricing">요금제</a>
+  <a href="/join" class="btn-nav">무료 등록</a>
+</nav>
+
+<div class="page">
+  <div id="loading"><div class="spinner"></div></div>
+  <div id="notFound" class="not-found" style="display:none">
+    <div class="icon">😅</div>
+    <h2>프로필을 찾을 수 없어요</h2>
+    <p>존재하지 않는 계정이거나 아직 분석이 완료되지 않았어요</p>
+    <a href="/marketplace" class="btn-back">인플루언서 탐색으로</a>
+  </div>
+  <div id="profileContent" style="display:none">
+
+    <!-- 헤더 -->
+    <div class="profile-header">
+      <div class="avatar" id="pAvatar">?</div>
+      <div class="profile-info">
+        <div class="profile-name" id="pName">—</div>
+        <div class="profile-handle" id="pHandle">—</div>
+        <div class="profile-badges">
+          <span class="badge badge-grade" id="pGrade">—</span>
+          <span class="badge badge-tier" id="pTier">—</span>
+          <span class="badge badge-cat" id="pCat">—</span>
+        </div>
+        <div class="profile-bio" id="pBio"></div>
+      </div>
+      <div class="profile-actions">
+        <a href="#" class="btn-contact" onclick="openModal();return false">📩 광고 의뢰하기</a>
+        <a href="#" class="btn-insta" id="pInstaLink" target="_blank">📱 인스타 보기</a>
+      </div>
+    </div>
+
+    <!-- KPI -->
+    <div class="kpi-grid">
+      <div class="kpi"><div class="val" id="kScore">—</div><div class="lbl">신뢰도 점수</div></div>
+      <div class="kpi"><div class="val" id="kFollower">—</div><div class="lbl">팔로워 수</div></div>
+      <div class="kpi"><div class="val" id="kER">—</div><div class="lbl">참여율 (ER)</div></div>
+      <div class="kpi"><div class="val" id="kRisk">—</div><div class="lbl">가짜팔로워</div></div>
+    </div>
+
+    <div class="grid2">
+      <!-- 세부 점수 -->
+      <div class="section-card">
+        <h3>📊 세부 점수 분석</h3>
+        <div id="scoreBreakdown"></div>
+      </div>
+
+      <!-- 광고 단가 -->
+      <div class="section-card">
+        <h3>💰 광고 단가</h3>
+        <div id="priceRows"></div>
+        <p style="font-size:11px;color:var(--muted);margin-top:12px">※ 시장 실거래가 기준 추정치</p>
+      </div>
+    </div>
+
+    <!-- 분석 정보 -->
+    <div class="section-card" style="margin-bottom:20px">
+      <h3>ℹ️ 분석 정보</h3>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;font-size:13px">
+        <div><span style="color:var(--muted)">분석 완료일</span><br><b id="iAnalyzed">—</b></div>
+        <div><span style="color:var(--muted)">팔로워 샘플 수</span><br><b>300명</b></div>
+        <div><span style="color:var(--muted)">분석 플랫폼</span><br><b>인스타그램</b></div>
+      </div>
+    </div>
+
+    <!-- 기업에게 보내는 메시지 -->
+    <div style="background:linear-gradient(135deg,#1B3A2D,#2D6A4F);border-radius:16px;padding:28px;text-align:center;margin-bottom:20px">
+      <h3 style="font-size:18px;font-weight:700;color:#fff;margin-bottom:8px">이 인플루언서와 협업하고 싶으신가요?</h3>
+      <p style="font-size:13px;color:rgba(255,255,255,0.75);margin-bottom:20px">InfluMatch를 통해 광고 의뢰를 보내면 빠르게 연결해드려요</p>
+      <button onclick="openModal()" style="background:#fff;color:var(--navy);border:none;padding:11px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">광고 의뢰하기 →</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- 광고 의뢰 모달 -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h2>광고 의뢰하기</h2>
+    <div class="sub" id="modalSub">선택한 인플루언서에게 의뢰를 보냅니다</div>
+    <div class="form-group">
+      <label>회사명</label>
+      <input type="text" id="mCompany" placeholder="(주)예시기업"/>
+    </div>
+    <div class="form-group">
+      <label>담당자 이메일</label>
+      <input type="email" id="mEmail" placeholder="담당자 이메일"/>
+    </div>
+    <div class="form-group">
+      <label>광고 카테고리</label>
+      <select id="mCat">
+        <option value="">선택해 주세요</option>
+        <option>뷰티</option><option>패션</option><option>음식</option>
+        <option>여행</option><option>운동</option><option>IT/테크</option>
+        <option>게임</option><option>육아</option><option>반려동물</option><option>기타</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>예산 (만원)</label>
+      <input type="number" id="mBudget" placeholder="예: 50"/>
+    </div>
+    <div class="form-group">
+      <label>의뢰 내용</label>
+      <textarea id="mContent" rows="3" placeholder="광고 내용, 일정, 요청사항 등"></textarea>
+    </div>
+    <button class="btn-send" onclick="sendRequest()">의뢰 보내기</button>
+  </div>
+</div>
+
+<script>
+const GRADE_CLR={S:'#5B4EC8',A:'#2D6A4F',B:'#B7935A',C:'#E67E22',D:'#C0392B'}
+const TIER_LBL={nano:'나노',micro:'마이크로',mid:'미드',macro:'매크로',mega:'메가',unknown:'—'}
+
+// URL에서 handle 추출
+const handle = location.pathname.split('/profile/')[1]?.replace('@','')?.trim()
+
+async function loadProfile() {
+  if(!handle) { showNotFound(); return }
+  try {
+    const data = await fetch(`/api/influencer/${handle}`).then(r=>r.json())
+    if(data.error || !data.insta_handle) { showNotFound(); return }
+    renderProfile(data)
+  } catch(e) { showNotFound() }
+}
+
+function renderProfile(d) {
+  document.title = `@${d.insta_handle} — InfluMatch`
+  document.getElementById('loading').style.display   = 'none'
+  document.getElementById('profileContent').style.display = 'block'
+
+  // 아바타
+  const av = document.getElementById('pAvatar')
+  av.textContent = (d.name||'?')[0]
+
+  // 기본 정보
+  document.getElementById('pName').textContent   = d.name || '—'
+  document.getElementById('pHandle').textContent = `@${d.insta_handle}`
+  document.getElementById('pInstaLink').href     = `https://instagram.com/${d.insta_handle}`
+
+  // 등급/티어/카테고리
+  const grade = d.grade || 'D'
+  const gEl   = document.getElementById('pGrade')
+  gEl.textContent    = grade + '등급'
+  gEl.style.background = GRADE_CLR[grade] || '#eee'
+
+  document.getElementById('pTier').textContent = TIER_LBL[d.tier] || d.tier || '—'
+  document.getElementById('pCat').textContent  = d.category || '일반'
+
+  // KPI
+  document.getElementById('kScore').textContent    = (d.final_score||0) + '점'
+  document.getElementById('kScore').style.color    = GRADE_CLR[grade]
+  document.getElementById('kFollower').textContent = (d.follower_count||0).toLocaleString() + '명'
+  document.getElementById('kER').textContent       = (d.raw_er||0).toFixed(1) + '%'
+
+  const risk = d.fake_risk || '—'
+  const rEl  = document.getElementById('kRisk')
+  if(risk==='LOW')        rEl.innerHTML = '<span class="risk-low">🟢 낮음</span>'
+  else if(risk==='MEDIUM') rEl.innerHTML = '<span class="risk-med">🟡 보통</span>'
+  else if(risk==='HIGH')   rEl.innerHTML = '<span class="risk-high">🔴 높음</span>'
+  else rEl.textContent = '분석 중'
+
+  // 세부 점수
+  const scores = [
+    {label:'참여도 (ER)',     val: d.score_er        || 0},
+    {label:'팔로워 품질',     val: d.score_quality   || 0},
+    {label:'댓글 품질',       val: d.score_comment   || 0},
+    {label:'업로드 일관성',   val: d.score_consistency || 0},
+  ]
+  document.getElementById('scoreBreakdown').innerHTML = scores.map(s=>{
+    const pct = Math.round(s.val)
+    const clr = pct>=70?'#2D6A4F':pct>=40?'#B7935A':'#C0392B'
+    return `<div class="bar-row">
+      <div class="bar-label"><span>${s.label}</span><span style="color:${clr};font-weight:600">${pct}점</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${clr}"></div></div>
+    </div>`
+  }).join('')
+
+  // 광고 단가
+  const ad = d.ad_price_feed || d.ad_price || {}
+  document.getElementById('priceRows').innerHTML = `
+    <div class="price-row"><span class="price-type">📸 피드 게시물</span><span class="price-val">${d.feed_price_fmt || '분석 중'}</span></div>
+    <div class="price-row"><span class="price-type">📖 스토리</span><span class="price-val">${d.story_price_fmt || '분석 중'}</span></div>
+    <div class="price-row"><span class="price-type">🎬 릴스</span><span class="price-val">${d.reels_price_fmt || '분석 중'}</span></div>
+  `
+
+  // 분석일
+  document.getElementById('iAnalyzed').textContent = (d.analyzed_at || d.joined_at || '—').slice(0,10)
+
+  // 모달 설정
+  document.getElementById('modalSub').textContent = `@${d.insta_handle}님에게 광고 의뢰를 보냅니다`
+
+  // 기업 로그인 정보 자동 입력
+  const cEmail = sessionStorage.getItem('company_email') || ''
+  const cName  = sessionStorage.getItem('company_name') || ''
+  if(cEmail) document.getElementById('mEmail').value   = cEmail
+  if(cName)  document.getElementById('mCompany').value = cName
+}
+
+function showNotFound() {
+  document.getElementById('loading').style.display  = 'none'
+  document.getElementById('notFound').style.display = 'block'
+}
+
+function openModal()  { document.getElementById('modal').className = 'modal-overlay show' }
+function closeModal() { document.getElementById('modal').className = 'modal-overlay' }
+
+async function sendRequest() {
+  const company = document.getElementById('mCompany').value.trim()
+  const email   = document.getElementById('mEmail').value.trim()
+  const cat     = document.getElementById('mCat').value
+  const budget  = document.getElementById('mBudget').value
+  const content = document.getElementById('mContent').value.trim()
+  if(!company||!email||!cat){ alert('회사명, 이메일, 카테고리는 필수입니다'); return }
+
+  try {
+    const res  = await fetch('/api/company/request', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        email, company_name: company,
+        title:    `[${handle}] ${cat} 광고 의뢰`,
+        category: cat,
+        budget:   parseInt(budget)||0,
+        content,
+        target_handle: handle,
+      })
+    })
+    const data = await res.json()
+    if(data.success) {
+      closeModal()
+      alert(`✅ 의뢰가 접수되었습니다!\n@${handle}님에게 알림이 발송됐어요.`)
+    } else {
+      alert('오류: ' + (data.error || '알 수 없는 오류'))
+    }
+  } catch(e) { alert('서버 오류: '+e.message) }
+}
+
+document.addEventListener('click', e => {
+  if(e.target.id==='modal') closeModal()
+})
+
+loadProfile()
+</script>
+</body>
+</html>
