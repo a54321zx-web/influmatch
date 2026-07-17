@@ -22,7 +22,7 @@ from auth import (
     create_token, get_current_user, get_current_user_optional
 )
 
-app = FastAPI(title="InfluMatch v6.8 — AI 인플루언서 마케팅 플랫폼")
+app = FastAPI(title="InfluMatch v6.9 — AI 인플루언서 마케팅 플랫폼")
 
 # 정적 파일
 if os.path.exists("static"):
@@ -455,6 +455,31 @@ async def api_admin_register_pending(data: dict):
         "category": data.get("category", ""),
     })
     return {"success": True, "id": row_id, "message": f"@{handle} 분석 대기 등록됨"}
+
+
+# ── 지원자 관리 API ───────────────────────────────────────
+@app.get("/api/applications")
+async def api_get_applications(campaign_id: int = None):
+    """전체 또는 특정 캠페인 지원자 목록"""
+    apps = db.get_campaign_applications(campaign_id)
+    return {"applications": apps, "total": len(apps)}
+
+
+@app.post("/api/applications/{app_id}/status")
+async def api_update_application(app_id: int, data: dict):
+    """지원자 수락/거절"""
+    status = data.get("status", "pending")
+    if status not in ["pending", "accepted", "rejected"]:
+        return {"error": "올바르지 않은 상태값"}
+    db.update_application_status(app_id, status)
+    return {"success": True}
+
+
+@app.get("/api/company/applications")
+async def api_company_applications(email: str = ""):
+    """기업 지원자 목록"""
+    apps = db.get_applications_by_company(email)
+    return {"applications": apps, "total": len(apps)}
 
 
 @app.get("/api/admin/influencers")

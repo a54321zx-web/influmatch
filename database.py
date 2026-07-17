@@ -834,3 +834,49 @@ def create_campaign_post(data: dict) -> int:
 
 
 init_campaigns()
+
+
+def get_campaign_applications(campaign_id: int = None) -> list[dict]:
+    """지원자 목록 조회 (campaign_id 없으면 전체)"""
+    conn = get_conn()
+    if campaign_id:
+        rows = conn.execute("""
+            SELECT a.*, p.title as campaign_title, p.company_name, p.thumbnail
+            FROM campaign_applications a
+            LEFT JOIN campaign_posts p ON a.campaign_id = p.id
+            WHERE a.campaign_id = ?
+            ORDER BY a.applied_at DESC
+        """, (campaign_id,)).fetchall()
+    else:
+        rows = conn.execute("""
+            SELECT a.*, p.title as campaign_title, p.company_name, p.thumbnail
+            FROM campaign_applications a
+            LEFT JOIN campaign_posts p ON a.campaign_id = p.id
+            ORDER BY a.applied_at DESC
+        """).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def update_application_status(app_id: int, status: str):
+    """지원자 상태 변경 (pending/accepted/rejected)"""
+    conn = get_conn()
+    conn.execute("UPDATE campaign_applications SET status=? WHERE id=?", (status, app_id))
+    conn.commit()
+    conn.close()
+
+
+def get_applications_by_company(company_email: str) -> list[dict]:
+    """기업이 등록한 캠페인의 지원자 목록"""
+    conn = get_conn()
+    rows = conn.execute("""
+        SELECT a.*, p.title as campaign_title, p.thumbnail
+        FROM campaign_applications a
+        LEFT JOIN campaign_posts p ON a.campaign_id = p.id
+        WHERE p.company_id IN (
+            SELECT id FROM companies WHERE email=?
+        )
+        ORDER BY a.applied_at DESC
+    """, (company_email,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]

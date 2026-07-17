@@ -361,5 +361,63 @@ async function loadMyReqs() {
   } catch(e) { document.getElementById('myReqsList').innerHTML='<div class="empty">로드 실패</div>' }
 }
 </script>
-</body>
+
+<!-- 지원자 현황 -->
+<div style="margin-top:24px">
+  <h2 style="font-size:16px;font-weight:700;margin-bottom:14px">📝 캠페인 지원자 현황</h2>
+  <div id="appSection" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px">
+    <div style="text-align:center;color:var(--muted);font-size:13px">로딩 중...</div>
+  </div>
+</div>
+
+<script>
+async function loadCompanyApps() {
+  const email = sessionStorage.getItem('company_email')
+  if(!email) return
+  try {
+    const data = await fetch('/api/company/applications?email='+encodeURIComponent(email)).then(r=>r.json())
+    const list = data.applications || []
+    const STATUS_LBL = {pending:'검토중', accepted:'✅ 선정', rejected:'❌ 미선정'}
+    document.getElementById('appSection').innerHTML = list.length ? `
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:#F7FAF8">
+            <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #D8EDE3;font-size:11px;color:#777">캠페인</th>
+            <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #D8EDE3;font-size:11px;color:#777">지원자</th>
+            <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #D8EDE3;font-size:11px;color:#777">이메일</th>
+            <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #D8EDE3;font-size:11px;color:#777">지원일</th>
+            <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #D8EDE3;font-size:11px;color:#777">상태</th>
+            <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #D8EDE3;font-size:11px;color:#777">액션</th>
+          </tr>
+        </thead>
+        <tbody>${list.map(a=>`<tr>
+          <td style="padding:10px 12px;border-bottom:1px solid #D8EDE3"><b>${a.campaign_title||'—'}</b></td>
+          <td style="padding:10px 12px;border-bottom:1px solid #D8EDE3">
+            <b>@${a.insta_handle}</b><br>
+            <span style="font-size:11px;color:#777">${a.name||''}</span>
+          </td>
+          <td style="padding:10px 12px;border-bottom:1px solid #D8EDE3;font-size:12px;color:#777">${a.email||''}</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #D8EDE3;font-size:11px;color:#777">${(a.applied_at||'').slice(0,10)}</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #D8EDE3">${STATUS_LBL[a.status]||a.status}</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #D8EDE3;display:flex;gap:4px">
+            <button onclick="updateStatus(${a.id},'accepted')" style="background:#E8F3ED;color:#2D6A4F;border:none;padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600">선정</button>
+            <button onclick="updateStatus(${a.id},'rejected')" style="background:#FDECEA;color:#C0392B;border:none;padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600">거절</button>
+          </td>
+        </tr>`).join('')}</tbody>
+      </table>` : '<div style="text-align:center;color:#777;font-size:13px;padding:20px">아직 지원자가 없어요</div>'
+  } catch(e) {}
+}
+
+async function updateStatus(id, status) {
+  await fetch('/api/applications/'+id+'/status', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({status})
+  })
+  loadCompanyApps()
+}
+
+// 기존 onload에 추가
+const _origLoad = window.onload
+window.onload = function() { if(_origLoad) _origLoad(); loadCompanyApps() }
+</script></body>
 </html>

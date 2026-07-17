@@ -93,6 +93,7 @@
       <div class="menu-item" onclick="switchPanel('revenue',this)"><span class="menu-icon">💰</span> 수익</div>
       <div class="menu-item" onclick="switchPanel('campaigns',this)"><span class="menu-icon">📋</span> 광고 의뢰</div>
       <div class="menu-item" onclick="switchPanel('analyze',this)"><span class="menu-icon">🔍</span> 직접 분석</div>
+      <div class="menu-item" onclick="switchPanel('applications',this)"><span class="menu-icon">📝</span> 지원 현황</div>
     </div>
     <div class="sidebar-bottom">
       <a href="/">← 사이트로 이동</a>
@@ -235,7 +236,7 @@ function switchPanel(name, el) {
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'))
   el.classList.add('active')
   document.getElementById('panel-'+name).classList.add('active')
-  const titles = {overview:'대시보드 개요',influencers:'인플루언서 관리',companies:'기업 관리',revenue:'수익 현황',campaigns:'광고 의뢰 관리',analyze:'직접 분석 요청'}
+  const titles = {overview:'대시보드 개요',influencers:'인플루언서 관리',companies:'기업 관리',revenue:'수익 현황',campaigns:'광고 의뢰 관리',analyze:'직접 분석 요청',applications:'캠페인 지원 현황'}
   document.getElementById('panelTitle').textContent = titles[name]
   loadPanel(name)
 }
@@ -403,6 +404,41 @@ async function loadCampTable() {
   }
 }
 
+async function loadApplications() {
+  try {
+    const data = await fetch('/api/applications').then(r=>r.json())
+    const list = data.applications || []
+    const STATUS_LBL = {pending:'검토중', accepted:'선정', rejected:'미선정'}
+    const STATUS_CLR = {pending:'badge-gray', accepted:'badge-green', rejected:'badge-red'}
+    document.getElementById('appTable').innerHTML = list.length ? `
+      <table class="data-table">
+        <thead><tr><th>캠페인</th><th>지원자</th><th>이메일</th><th>메시지</th><th>지원일</th><th>상태</th><th>액션</th></tr></thead>
+        <tbody>${list.map(a=>`<tr>
+          <td><b>${a.campaign_title||'—'}</b><br><span style="font-size:11px;color:var(--muted)">${a.company_name||''}</span></td>
+          <td><b>@${a.insta_handle}</b><br><span style="font-size:11px;color:var(--muted)">${a.name||''}</span></td>
+          <td style="font-size:12px;color:var(--muted)">${a.email||''}</td>
+          <td style="font-size:12px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.message||'—'}</td>
+          <td style="font-size:11px;color:var(--muted)">${(a.applied_at||'').slice(0,10)}</td>
+          <td><span class="badge ${STATUS_CLR[a.status]||'badge-gray'}">${STATUS_LBL[a.status]||a.status}</span></td>
+          <td style="display:flex;gap:4px">
+            <button onclick="updateApp(${a.id},'accepted',this)" style="background:#E8F3ED;color:var(--green);border:none;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer">✓ 선정</button>
+            <button onclick="updateApp(${a.id},'rejected',this)" style="background:#FDECEA;color:var(--danger);border:none;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer">✗ 거절</button>
+          </td>
+        </tr>`).join('')}</tbody>
+      </table>` : '<div class="empty">지원자가 없습니다</div>'
+  } catch(e) {
+    document.getElementById('appTable').innerHTML = '<div class="empty">로드 실패</div>'
+  }
+}
+
+async function updateApp(id, status, btn) {
+  await fetch(`/api/applications/${id}/status`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({status})
+  })
+  await loadApplications()
+}
+
 // 초기 로드
 loadOverview()
 loadOverviewDetails()
@@ -482,6 +518,7 @@ async function loadPanel(name) {
   if(name==='revenue')       await loadOverview()
   if(name==='campaigns')     await loadCampTable()
   if(name==='analyze')       await loadPendingList()
+  if(name==='applications')  await loadApplications()
 }
 </script>
 </body>
