@@ -22,7 +22,7 @@ from auth import (
     create_token, get_current_user, get_current_user_optional
 )
 
-app = FastAPI(title="InfluMatch v6.5 — AI 인플루언서 마케팅 플랫폼")
+app = FastAPI(title="InfluMatch v6.7 — AI 인플루언서 마케팅 플랫폼")
 
 # 정적 파일
 if os.path.exists("static"):
@@ -91,6 +91,10 @@ async def page_about():
 @app.get("/forgot")
 async def page_forgot():
     return FileResponse("static/forgot.html")
+
+@app.get("/campaign")
+async def page_campaign():
+    return FileResponse("static/campaign.html")
 
 @app.get("/profile/{handle}")
 async def page_profile(handle: str):
@@ -222,6 +226,39 @@ async def api_reanalyze(handle: str):
         "success": True,
         "message": "재분석 요청이 접수됐습니다. PC에서 동기화 시 반영됩니다."
     }
+
+
+# ── 캠페인 API ────────────────────────────────────────────
+@app.get("/api/campaigns")
+async def api_get_campaigns(category: str = None, campaign_type: str = None):
+    campaigns = db.get_campaigns(category=category, campaign_type=campaign_type)
+    return {"campaigns": campaigns, "total": len(campaigns)}
+
+
+@app.get("/api/campaigns/{campaign_id}")
+async def api_get_campaign(campaign_id: int):
+    campaign = db.get_campaign_by_id(campaign_id)
+    if not campaign:
+        return {"error": "캠페인을 찾을 수 없습니다"}
+    return campaign
+
+
+@app.post("/api/campaigns/{campaign_id}/apply")
+async def api_apply_campaign(campaign_id: int, data: dict):
+    if not data.get("insta_handle") or not data.get("email"):
+        return {"error": "계정명과 이메일은 필수입니다"}
+    row_id = db.apply_campaign(campaign_id, data)
+    if row_id == -1:
+        return {"error": "이미 지원한 캠페인입니다"}
+    return {"success": True, "id": row_id}
+
+
+@app.post("/api/campaigns")
+async def api_create_campaign(data: dict):
+    if not data.get("title") or not data.get("company_name"):
+        return {"error": "제목과 회사명은 필수입니다"}
+    row_id = db.create_campaign_post(data)
+    return {"success": True, "id": row_id}
 
 
 # ── 계정 찾기 API ─────────────────────────────────────────────
@@ -385,6 +422,37 @@ async def api_company_requests(email: str):
 
 
 # ── 관리자 API ────────────────────────────────────────────
+@app.get("/api/sync/pending-list")
+async def api_sync_pending_list():
+    """관리자용 — 분석 대기 목록 (인증 없이)"""
+    conn = db.get_conn()
+    rows = conn.execute(
+        "SELECT insta_handle, category, joined_at FROM influencers WHERE status='pending' ORDER BY joined_at DESC"
+    ).fetchall()
+    conn.close()
+    return {"pending": [dict(r) for r in rows]}
+
+
+@app.post("/api/admin/register-pending")
+async def api_admin_register_pending(data: dict):
+    """관리자가 계정명 직접 입력해서 분석 대기 등록"""
+    handle = (data.get("insta_handle") or "").replace("@","").strip()
+    if not handle:
+        return {"error": "계정명을 입력해 주세요"}
+    existing = db.get_influencer_by_handle(handle)
+    if existing:
+        db.mark_pending(handle)
+        return {"success": True, "message": f"@{handle} 재분석 요청됨"}
+    row_id = db.create_influencer({
+        "name": handle,
+        "email": f"{handle}@influmatch.temp",
+        "phone": "",
+        "insta_handle": handle,
+        "category": data.get("category", ""),
+    })
+    return {"success": True, "id": row_id, "message": f"@{handle} 분석 대기 등록됨"}
+
+
 @app.get("/api/admin/influencers")
 async def api_admin_influencers():
     conn = db.get_conn()

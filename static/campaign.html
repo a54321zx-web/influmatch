@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>체험단/캠페인 — InfluMatch</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--navy:#1B3A2D;--green:#2D6A4F;--gold:#B7935A;--danger:#C0392B;--bg:#F7FAF8;--card:#FFFFFF;--border:#D8EDE3;--text:#111111;--muted:#777777}
+  body{font-family:'Segoe UI',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+  nav{background:var(--card);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;height:60px;gap:24px;position:sticky;top:0;z-index:100}
+  .logo{font-size:18px;font-weight:700;color:var(--navy);text-decoration:none}.logo span{color:var(--green)}
+  nav a{color:var(--muted);text-decoration:none;font-size:14px}
+  nav a:hover{color:var(--text)}
+  .btn-nav{margin-left:auto;background:var(--green);color:#fff!important;padding:8px 20px;border-radius:8px;font-weight:600}
+
+  /* 히어로 */
+  .hero{background:linear-gradient(135deg,#1B3A2D,#2D6A4F);padding:48px 32px;text-align:center}
+  .hero h1{font-size:32px;font-weight:800;color:#fff;margin-bottom:10px}
+  .hero h1 span{color:#7AC99A}
+  .hero p{font-size:15px;color:rgba(255,255,255,0.75);margin-bottom:24px}
+  .hero-stats{display:flex;justify-content:center;gap:32px}
+  .hero-stat .num{font-size:24px;font-weight:700;color:#7AC99A}
+  .hero-stat .lbl{font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px}
+
+  /* 필터 */
+  .filter-bar{background:var(--card);border-bottom:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:60px;z-index:99}
+  .filter-btn{padding:7px 16px;border:1px solid var(--border);border-radius:20px;font-size:13px;cursor:pointer;background:var(--card);color:var(--muted);transition:all 0.2s}
+  .filter-btn:hover{border-color:var(--green);color:var(--green)}
+  .filter-btn.active{background:var(--green);color:#fff;border-color:var(--green)}
+  .filter-sep{width:1px;height:20px;background:var(--border)}
+  .type-btn{padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:12px;cursor:pointer;background:var(--card);color:var(--muted);transition:all 0.2s}
+  .type-btn.active{border-color:var(--gold);color:var(--gold);background:#FDF3E3}
+  .count-badge{margin-left:auto;font-size:13px;color:var(--muted)}
+
+  /* 캠페인 그리드 */
+  .page{max-width:1100px;margin:0 auto;padding:28px 32px;flex:1}
+  .campaign-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  
+  .campaign-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:all 0.2s;position:relative}
+  .campaign-card:hover{border-color:var(--green);box-shadow:0 4px 20px rgba(45,106,79,0.12);transform:translateY(-2px)}
+  
+  .card-thumb{height:100px;display:flex;align-items:center;justify-content:center;font-size:48px;background:linear-gradient(135deg,#E8F3ED,#F7FAF8)}
+  .card-body{padding:16px}
+  .card-company{font-size:11px;color:var(--muted);margin-bottom:4px;display:flex;align-items:center;gap:6px}
+  .card-company .verified{color:var(--green);font-size:10px}
+  .card-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .card-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .tag{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+  .tag-cat{background:#E8F3ED;color:var(--green)}
+  .tag-type-review{background:#EEF2FF;color:#5B4EC8}
+  .tag-type-experience{background:#FDF3E3;color:var(--gold)}
+  .tag-type-ad{background:#FEF0F0;color:var(--danger)}
+  .card-reward{font-size:14px;font-weight:700;color:var(--green);margin-bottom:10px}
+  .card-footer{display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--border)}
+  .card-deadline{font-size:11px;color:var(--muted)}
+  .card-slots{font-size:11px;color:var(--muted)}
+  .slot-bar{height:4px;background:#E8F3ED;border-radius:2px;margin-top:4px;overflow:hidden}
+  .slot-fill{height:100%;background:var(--green);border-radius:2px}
+  .apply-btn{background:var(--green);color:#fff;border:none;padding:7px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
+  .apply-btn:hover{background:var(--navy)}
+  .apply-btn.full{background:#ccc;cursor:not-allowed}
+  
+  /* D-day 뱃지 */
+  .dday{position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.6);color:#fff;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600}
+  .dday.urgent{background:var(--danger)}
+
+  /* 빈 상태 */
+  .empty{text-align:center;padding:80px 24px;color:var(--muted)}
+  .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite;margin:60px auto}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* 지원 모달 */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;align-items:center;justify-content:center}
+  .modal-overlay.show{display:flex}
+  .modal{background:var(--card);border-radius:16px;padding:32px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;position:relative}
+  .modal-close{position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)}
+  .modal h2{font-size:18px;font-weight:700;margin-bottom:4px}
+  .modal .sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+  .campaign-summary{background:var(--bg);border-radius:10px;padding:14px;margin-bottom:20px;font-size:13px}
+  .campaign-summary .ct{font-weight:700;color:var(--text);margin-bottom:4px}
+  .campaign-summary .cr{color:var(--green);font-weight:700}
+  .form-group{margin-bottom:14px}
+  .form-group label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase}
+  .form-group input,.form-group textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:10px 13px;border-radius:8px;font-size:13px;outline:none;font-family:inherit}
+  .form-group input:focus,.form-group textarea:focus{border-color:var(--green)}
+  .btn-apply{width:100%;background:var(--green);color:#fff;border:none;padding:13px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer}
+  .success-msg{display:none;text-align:center;padding:24px}
+  .success-msg .icon{font-size:48px;margin-bottom:12px}
+  .success-msg h3{font-size:18px;font-weight:700;margin-bottom:8px}
+  .success-msg p{font-size:13px;color:var(--muted)}
+
+  /* 푸터 */
+  footer{background:#1B3A2D;padding:28px 32px;text-align:center;font-size:12px;color:rgba(255,255,255,0.4);margin-top:auto}
+  footer a{color:rgba(255,255,255,0.5);text-decoration:none;margin:0 8px}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="logo">InfluMatch<span>.</span></a>
+  <a href="/marketplace">인플루언서 탐색</a>
+  <a href="/campaign" style="color:var(--green);font-weight:600">체험단</a>
+  <a href="/youtube">유튜브 분석</a>
+  <a href="/pricing">요금제</a>
+  <a href="/join" class="btn-nav">무료 등록</a>
+</nav>
+
+<!-- 히어로 -->
+<div class="hero">
+  <h1>체험단 · 광고 <span>캠페인</span></h1>
+  <p>브랜드가 직접 올린 캠페인에 지원하세요. 제품 체험부터 광고비까지!</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num" id="hTotal">—</div><div class="lbl">진행 중 캠페인</div></div>
+    <div class="hero-stat"><div class="num" id="hSlots">—</div><div class="lbl">모집 인원</div></div>
+    <div class="hero-stat"><div class="num" id="hReward">—</div><div class="lbl">평균 리워드</div></div>
+  </div>
+</div>
+
+<!-- 필터 -->
+<div class="filter-bar">
+  <button class="filter-btn active" onclick="filterCat('',this)">전체</button>
+  <button class="filter-btn" onclick="filterCat('뷰티',this)">💄 뷰티</button>
+  <button class="filter-btn" onclick="filterCat('음식',this)">🍳 음식</button>
+  <button class="filter-btn" onclick="filterCat('패션',this)">👗 패션</button>
+  <button class="filter-btn" onclick="filterCat('운동',this)">💪 운동</button>
+  <button class="filter-btn" onclick="filterCat('반려동물',this)">🐾 반려동물</button>
+  <div class="filter-sep"></div>
+  <button class="type-btn active" onclick="filterType('',this)">전체 유형</button>
+  <button class="type-btn" onclick="filterType('review',this)">체험단</button>
+  <button class="type-btn" onclick="filterType('experience',this)">경험단</button>
+  <button class="type-btn" onclick="filterType('ad',this)">광고</button>
+  <span class="count-badge" id="countBadge">로딩 중...</span>
+</div>
+
+<div class="page">
+  <div id="loading"><div class="spinner"></div></div>
+  <div class="campaign-grid" id="campaignGrid" style="display:none"></div>
+  <div class="empty" id="emptyMsg" style="display:none">
+    <div style="font-size:48px;margin-bottom:12px">📭</div>
+    <div>해당 조건의 캠페인이 없어요</div>
+  </div>
+</div>
+
+<!-- 지원 모달 -->
+<div class="modal-overlay" id="applyModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="applyForm">
+      <h2>캠페인 지원하기</h2>
+      <div class="sub" id="modalSub">선택한 캠페인에 지원합니다</div>
+      <div class="campaign-summary" id="campaignSummary"></div>
+      <div class="form-group">
+        <label>인스타그램 계정명</label>
+        <input type="text" id="aHandle" placeholder="계정명 (@ 제외)"/>
+      </div>
+      <div class="form-group">
+        <label>이름</label>
+        <input type="text" id="aName" placeholder="홍길동"/>
+      </div>
+      <div class="form-group">
+        <label>이메일</label>
+        <input type="email" id="aEmail" placeholder="example@email.com"/>
+      </div>
+      <div class="form-group">
+        <label>지원 메시지 (선택)</label>
+        <textarea id="aMessage" rows="3" placeholder="자기소개나 지원 동기를 간단히 써주세요"></textarea>
+      </div>
+      <button class="btn-apply" onclick="submitApply()">지원하기 🚀</button>
+    </div>
+    <div class="success-msg" id="successMsg">
+      <div class="icon">🎉</div>
+      <h3>지원 완료!</h3>
+      <p>브랜드에서 검토 후 연락드릴 예정이에요.<br>마이페이지에서 지원 현황을 확인하세요.</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  © 2026 InfluMatch
+  <a href="/terms">이용약관</a>
+  <a href="/privacy">개인정보처리방침</a>
+  <a href="/contact">고객센터</a>
+</footer>
+
+<script>
+let allCampaigns = []
+let selectedCat  = ''
+let selectedType = ''
+let selectedCampaign = null
+
+const TYPE_LBL = {review:'체험단', experience:'경험단', ad:'광고'}
+const TYPE_TAG = {review:'tag-type-review', experience:'tag-type-experience', ad:'tag-type-ad'}
+
+async function loadCampaigns() {
+  try {
+    const data = await fetch('/api/campaigns').then(r=>r.json())
+    allCampaigns = data.campaigns || []
+    updateStats()
+    renderCampaigns()
+  } catch(e) {
+    document.getElementById('loading').style.display = 'none'
+    document.getElementById('emptyMsg').style.display = 'block'
+  }
+}
+
+function updateStats() {
+  const total  = allCampaigns.length
+  const slots  = allCampaigns.reduce((s,c)=>s+(c.slots||0),0)
+  const rewards = allCampaigns.filter(c=>c.reward_amount>0)
+  const avgReward = rewards.length ? Math.round(rewards.reduce((s,c)=>s+c.reward_amount,0)/rewards.length) : 0
+  document.getElementById('hTotal').textContent   = total + '개'
+  document.getElementById('hSlots').textContent   = slots.toLocaleString() + '명'
+  document.getElementById('hReward').textContent  = avgReward ? avgReward.toLocaleString()+'원' : '제품제공'
+}
+
+function renderCampaigns() {
+  document.getElementById('loading').style.display = 'none'
+  let list = allCampaigns
+  if(selectedCat)  list = list.filter(c=>c.category===selectedCat)
+  if(selectedType) list = list.filter(c=>c.campaign_type===selectedType)
+
+  document.getElementById('countBadge').textContent = `${list.length}개 캠페인`
+
+  if(!list.length) {
+    document.getElementById('campaignGrid').style.display = 'none'
+    document.getElementById('emptyMsg').style.display     = 'block'
+    return
+  }
+  document.getElementById('emptyMsg').style.display     = 'none'
+  document.getElementById('campaignGrid').style.display = 'grid'
+
+  document.getElementById('campaignGrid').innerHTML = list.map(c => {
+    const slotPct  = Math.round((c.applied||0)/(c.slots||1)*100)
+    const isFull   = (c.applied||0) >= (c.slots||1)
+    const dday     = getDday(c.deadline)
+    const ddayClass= dday <= 3 ? 'dday urgent' : 'dday'
+    return `
+    <div class="campaign-card" onclick="openModal(${c.id})">
+      ${c.deadline ? `<div class="${ddayClass}">${dday<=0?'마감임박':`D-${dday}`}</div>` : ''}
+      <div class="card-thumb">${c.thumbnail||'🎁'}</div>
+      <div class="card-body">
+        <div class="card-company">${c.company_name||'브랜드'} <span class="verified">✓ 인증</span></div>
+        <div class="card-title">${c.title}</div>
+        <div class="card-tags">
+          <span class="tag tag-cat">${c.category||'일반'}</span>
+          <span class="tag ${TYPE_TAG[c.campaign_type]||''}">${TYPE_LBL[c.campaign_type]||'캠페인'}</span>
+        </div>
+        <div class="card-reward">${c.reward_amount>0 ? c.reward_amount.toLocaleString()+'원' : '제품 제공'}</div>
+        <div class="card-footer">
+          <div>
+            <div class="card-slots">${c.applied||0}/${c.slots||0}명 지원</div>
+            <div class="slot-bar"><div class="slot-fill" style="width:${Math.min(slotPct,100)}%"></div></div>
+          </div>
+          <button class="apply-btn ${isFull?'full':''}" onclick="event.stopPropagation();openModal(${c.id})">${isFull?'마감':'지원하기'}</button>
+        </div>
+      </div>
+    </div>`
+  }).join('')
+}
+
+function getDday(deadline) {
+  if(!deadline) return 999
+  const d = new Date(deadline)
+  const now = new Date()
+  return Math.ceil((d - now) / (1000*60*60*24))
+}
+
+function filterCat(cat, el) {
+  selectedCat = cat
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'))
+  el.classList.add('active')
+  renderCampaigns()
+}
+
+function filterType(type, el) {
+  selectedType = type
+  document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'))
+  el.classList.add('active')
+  renderCampaigns()
+}
+
+function openModal(id) {
+  selectedCampaign = allCampaigns.find(c=>c.id===id)
+  if(!selectedCampaign) return
+
+  document.getElementById('applyForm').style.display  = 'block'
+  document.getElementById('successMsg').style.display = 'none'
+  document.getElementById('modalSub').textContent     = selectedCampaign.company_name + ' · ' + selectedCampaign.title
+  document.getElementById('campaignSummary').innerHTML = `
+    <div class="ct">${selectedCampaign.title}</div>
+    <div style="font-size:12px;color:var(--muted);margin:4px 0">${selectedCampaign.requirements||''}</div>
+    <div class="cr">${selectedCampaign.reward||''}</div>
+  `
+
+  // 로그인 정보 자동 입력
+  const handle = sessionStorage.getItem('inf_handle') || ''
+  const email  = sessionStorage.getItem('inf_email') || ''
+  if(handle) document.getElementById('aHandle').value = handle
+  if(email)  document.getElementById('aEmail').value  = email
+
+  document.getElementById('applyModal').className = 'modal-overlay show'
+}
+
+function closeModal() {
+  document.getElementById('applyModal').className = 'modal-overlay'
+}
+
+async function submitApply() {
+  const handle  = document.getElementById('aHandle').value.trim().replace('@','')
+  const name    = document.getElementById('aName').value.trim()
+  const email   = document.getElementById('aEmail').value.trim()
+  const message = document.getElementById('aMessage').value.trim()
+  if(!handle||!name||!email){ alert('계정명, 이름, 이메일은 필수입니다'); return }
+
+  try {
+    const res  = await fetch(`/api/campaigns/${selectedCampaign.id}/apply`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({insta_handle:handle, name, email, message})
+    })
+    const data = await res.json()
+    if(data.error){ alert('오류: ' + data.error); return }
+
+    // 지원 수 로컬 업데이트
+    const c = allCampaigns.find(c=>c.id===selectedCampaign.id)
+    if(c) c.applied = (c.applied||0) + 1
+
+    document.getElementById('applyForm').style.display  = 'none'
+    document.getElementById('successMsg').style.display = 'block'
+    renderCampaigns()
+  } catch(e) { alert('서버 오류: '+e.message) }
+}
+
+document.addEventListener('click', e=>{
+  if(e.target.id==='applyModal') closeModal()
+})
+
+loadCampaigns()
+</script>
+</body>
+</html>

@@ -40,6 +40,10 @@ async def page_marketplace():
 async def page_admin():
     return FileResponse("static/index.html")
 
+@app.get("/analyze")
+async def page_analyze():
+    return FileResponse("static/analyze.html")
+
 @app.get("/dashboard")
 async def page_dashboard():
     return FileResponse("static/dashboard.html")

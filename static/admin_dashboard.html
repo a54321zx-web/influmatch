@@ -92,6 +92,7 @@
       <div class="menu-item" onclick="switchPanel('companies',this)"><span class="menu-icon">🏢</span> 기업</div>
       <div class="menu-item" onclick="switchPanel('revenue',this)"><span class="menu-icon">💰</span> 수익</div>
       <div class="menu-item" onclick="switchPanel('campaigns',this)"><span class="menu-icon">📋</span> 광고 의뢰</div>
+      <div class="menu-item" onclick="switchPanel('analyze',this)"><span class="menu-icon">🔍</span> 직접 분석</div>
     </div>
     <div class="sidebar-bottom">
       <a href="/">← 사이트로 이동</a>
@@ -234,7 +235,7 @@ function switchPanel(name, el) {
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'))
   el.classList.add('active')
   document.getElementById('panel-'+name).classList.add('active')
-  const titles = {overview:'대시보드 개요',influencers:'인플루언서 관리',companies:'기업 관리',revenue:'수익 현황',campaigns:'광고 의뢰 관리'}
+  const titles = {overview:'대시보드 개요',influencers:'인플루언서 관리',companies:'기업 관리',revenue:'수익 현황',campaigns:'광고 의뢰 관리',analyze:'직접 분석 요청'}
   document.getElementById('panelTitle').textContent = titles[name]
   loadPanel(name)
 }
@@ -405,6 +406,83 @@ async function loadCampTable() {
 // 초기 로드
 loadOverview()
 loadOverviewDetails()
+
+async function requestAnalyze() {
+  const handle = document.getElementById('analyzeHandle').value.trim().replace('@','')
+  if(!handle){ alert('계정명을 입력해 주세요'); return }
+
+  const result = document.getElementById('analyzeResult')
+  result.style.display = 'block'
+  result.innerHTML = '<div style="color:var(--muted);font-size:13px">처리 중...</div>'
+
+  try {
+    // 이미 가입된 계정이면 재분석 요청, 없으면 pending 등록
+    const inf = await fetch(`/api/influencer/${handle}`).then(r=>r.json())
+
+    if(inf.insta_handle) {
+      // 이미 있는 계정 → 재분석 요청
+      const res = await fetch(`/api/reanalyze/${handle}`, {method:'POST'})
+      const data = await res.json()
+      result.innerHTML = `<div style="background:#E8F3ED;border-radius:8px;padding:14px;font-size:13px;color:var(--navy)">
+        ✅ <b>@${handle}</b> 재분석 요청 완료!<br>
+        <span style="color:var(--muted)">PC에서 python engyn.py --sync 실행하면 분석돼요</span>
+      </div>`
+    } else {
+      // 없는 계정 → 임시 등록 후 pending
+      const res = await fetch('/api/admin/register-pending', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({insta_handle: handle})
+      })
+      const data = await res.json()
+      if(data.success) {
+        result.innerHTML = `<div style="background:#E8F3ED;border-radius:8px;padding:14px;font-size:13px;color:var(--navy)">
+          ✅ <b>@${handle}</b> 분석 대기 등록 완료!<br>
+          <span style="color:var(--muted)">PC에서 python engyn.py --sync 실행하면 분석돼요</span>
+        </div>`
+      } else {
+        result.innerHTML = `<div style="background:#FEF0F0;border-radius:8px;padding:14px;font-size:13px;color:#C0392B">❌ ${data.error}</div>`
+      }
+    }
+    loadPendingList()
+  } catch(e) {
+    result.innerHTML = `<div style="background:#FEF0F0;border-radius:8px;padding:14px;font-size:13px;color:#C0392B">❌ 오류: ${e.message}</div>`
+  }
+}
+
+async function loadPendingList() {
+  try {
+    const data = await fetch('/api/sync/pending-list').then(r=>r.json())
+    const list = data.pending || []
+    document.getElementById('pendingList').innerHTML = list.length ? `
+      <table class="data-table">
+        <thead><tr><th>계정명</th><th>카테고리</th><th>상태</th><th>가입일</th><th>액션</th></tr></thead>
+        <tbody>${list.map(p=>`<tr>
+          <td><b>@${p.insta_handle}</b></td>
+          <td>${p.category||'일반'}</td>
+          <td><span class="badge badge-gray">대기중</span></td>
+          <td style="font-size:11px;color:var(--muted)">${(p.joined_at||'').slice(0,10)}</td>
+          <td><button onclick="forceReanalyze('${p.insta_handle}')"
+            style="background:var(--green);color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer">재요청</button></td>
+        </tr>`).join('')}</tbody>
+      </table>` : '<div class="empty">분석 대기 중인 계정이 없습니다 ✅</div>'
+  } catch(e) {
+    document.getElementById('pendingList').innerHTML = '<div class="empty">로드 실패</div>'
+  }
+}
+
+async function forceReanalyze(handle) {
+  await fetch(`/api/reanalyze/${handle}`, {method:'POST'})
+  alert(`@${handle} 재분석 요청됨! engyn.py --sync 실행해 주세요.`)
+}
+
+async function loadPanel(name) {
+  if(name==='overview')      await loadOverviewDetails()
+  if(name==='influencers')   await loadInfTable()
+  if(name==='companies')     await loadCompTable()
+  if(name==='revenue')       await loadOverview()
+  if(name==='campaigns')     await loadCampTable()
+  if(name==='analyze')       await loadPendingList()
+}
 </script>
 </body>
 </html>

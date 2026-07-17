@@ -689,3 +689,148 @@ def get_revenue_stats() -> dict:
 
 
 init_membership()
+
+
+# ══════════════════════════════════════════════════════════════
+# 체험단/캠페인 공고 시스템
+# ══════════════════════════════════════════════════════════════
+def init_campaigns():
+    conn = get_conn()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS campaign_posts (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            company_name    TEXT,
+            title           TEXT NOT NULL,
+            category        TEXT,
+            campaign_type   TEXT DEFAULT 'review',
+            description     TEXT,
+            requirements    TEXT,
+            reward          TEXT,
+            reward_amount   INTEGER DEFAULT 0,
+            deadline        TEXT,
+            slots           INTEGER DEFAULT 10,
+            applied         INTEGER DEFAULT 0,
+            status          TEXT DEFAULT 'open',
+            thumbnail       TEXT DEFAULT '🎁',
+            created_at      TEXT DEFAULT (datetime('now','localtime'))
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS campaign_applications (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            campaign_id     INTEGER,
+            insta_handle    TEXT,
+            name            TEXT,
+            email           TEXT,
+            message         TEXT,
+            status          TEXT DEFAULT 'pending',
+            applied_at      TEXT DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY(campaign_id) REFERENCES campaign_posts(id)
+        )
+    """)
+    existing = conn.execute("SELECT COUNT(*) FROM campaign_posts").fetchone()[0]
+    if existing == 0:
+        samples = [
+            ("뷰티풀스킨", "신제품 수분크림 체험단 모집", "뷰티", "review",
+             "새로 출시한 수분크림을 직접 사용해보고 솔직한 후기를 인스타그램에 올려주실 분을 모집합니다.",
+             "뷰티 카테고리 · 팔로워 500명 이상 · B등급 이상",
+             "제품 무료 제공 + 원고료 30,000원", 30000, "2026-08-31", 20, "💄"),
+            ("맛있는부엌", "홈쿠킹 밀키트 체험단", "음식", "experience",
+             "다양한 밀키트를 직접 요리하고 리뷰해주실 푸드 인플루언서를 모집합니다.",
+             "음식/요리 카테고리 · 팔로워 1,000명 이상",
+             "밀키트 3종 무료 제공", 0, "2026-08-15", 15, "🍳"),
+            ("트렌디패션", "여름 신상 스타일링 광고", "패션", "ad",
+             "2026 여름 신상 의류 스타일링 콘텐츠를 제작해주실 패션 인플루언서를 찾습니다.",
+             "패션 카테고리 · 팔로워 3,000명 이상 · A등급 이상",
+             "의류 제공 + 광고비 협의", 0, "2026-07-31", 5, "👗"),
+            ("헬스짐", "피트니스 용품 체험 후기", "운동", "review",
+             "홈트레이닝 용품을 체험하고 운동 루틴과 함께 리뷰해주실 분을 모집합니다.",
+             "운동/헬스 카테고리 · 팔로워 500명 이상",
+             "용품 무료 제공 + 20,000원", 20000, "2026-08-20", 10, "💪"),
+            ("펫라이프", "강아지 간식 체험단", "반려동물", "review",
+             "반려견과 함께하는 간식 체험 후기를 올려주실 펫 인플루언서를 모집합니다.",
+             "반려동물 카테고리 · 팔로워 500명 이상",
+             "간식 3종 무료 제공 + 15,000원", 15000, "2026-09-01", 30, "🐾"),
+        ]
+        for s in samples:
+            conn.execute("""
+                INSERT INTO campaign_posts
+                (company_name, title, category, campaign_type, description, requirements, reward, reward_amount, deadline, slots, thumbnail)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?)
+            """, s)
+    conn.commit()
+    conn.close()
+
+
+def get_campaigns(category=None, campaign_type=None, status='open', limit=50) -> list[dict]:
+    conn = get_conn()
+    q = "SELECT * FROM campaign_posts WHERE status=?"
+    params = [status]
+    if category:
+        q += " AND category=?"
+        params.append(category)
+    if campaign_type:
+        q += " AND campaign_type=?"
+        params.append(campaign_type)
+    q += " ORDER BY created_at DESC LIMIT ?"
+    params.append(limit)
+    rows = conn.execute(q, params).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_campaign_by_id(campaign_id: int) -> dict | None:
+    conn = get_conn()
+    row = conn.execute("SELECT * FROM campaign_posts WHERE id=?", (campaign_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def apply_campaign(campaign_id: int, data: dict) -> int:
+    conn = get_conn()
+    existing = conn.execute(
+        "SELECT id FROM campaign_applications WHERE campaign_id=? AND insta_handle=?",
+        (campaign_id, data.get("insta_handle",""))
+    ).fetchone()
+    if existing:
+        conn.close()
+        return -1
+    c = conn.cursor()
+    c.execute("""
+        INSERT INTO campaign_applications (campaign_id, insta_handle, name, email, message)
+        VALUES (?,?,?,?,?)
+    """, (campaign_id, data.get("insta_handle",""), data.get("name",""), data.get("email",""), data.get("message","")))
+    conn.execute("UPDATE campaign_posts SET applied=applied+1 WHERE id=?", (campaign_id,))
+    conn.commit()
+    row_id = c.lastrowid
+    conn.close()
+    return row_id
+
+
+def create_campaign_post(data: dict) -> int:
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("""
+        INSERT INTO campaign_posts
+        (company_name, title, category, campaign_type, description, requirements, reward, reward_amount, deadline, slots, thumbnail)
+        VALUES (:company_name,:title,:category,:campaign_type,:description,:requirements,:reward,:reward_amount,:deadline,:slots,:thumbnail)
+    """, {
+        "company_name":  data.get("company_name",""),
+        "title":         data.get("title",""),
+        "category":      data.get("category",""),
+        "campaign_type": data.get("campaign_type","review"),
+        "description":   data.get("description",""),
+        "requirements":  data.get("requirements",""),
+        "reward":        data.get("reward",""),
+        "reward_amount": data.get("reward_amount",0),
+        "deadline":      data.get("deadline",""),
+        "slots":         data.get("slots",10),
+        "thumbnail":     data.get("thumbnail","🎁"),
+    })
+    conn.commit()
+    row_id = c.lastrowid
+    conn.close()
+    return row_id
+
+
+init_campaigns()
