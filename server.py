@@ -22,7 +22,7 @@ from auth import (
     create_token, get_current_user, get_current_user_optional
 )
 
-app = FastAPI(title="InfluMatch v6.7 — AI 인플루언서 마케팅 플랫폼")
+app = FastAPI(title="InfluMatch v6.8 — AI 인플루언서 마케팅 플랫폼")
 
 # 정적 파일
 if os.path.exists("static"):
@@ -95,6 +95,10 @@ async def page_forgot():
 @app.get("/campaign")
 async def page_campaign():
     return FileResponse("static/campaign.html")
+
+@app.get("/campaign/{campaign_id}")
+async def page_campaign_detail(campaign_id: int):
+    return FileResponse("static/campaign_detail.html")
 
 @app.get("/profile/{handle}")
 async def page_profile(handle: str):

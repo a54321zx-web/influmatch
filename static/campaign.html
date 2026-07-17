@@ -235,7 +235,7 @@ function renderCampaigns() {
     const dday     = getDday(c.deadline)
     const ddayClass= dday <= 3 ? 'dday urgent' : 'dday'
     return `
-    <div class="campaign-card" onclick="openModal(${c.id})">
+    <div class="campaign-card" onclick="location.href='/campaign/${c.id}'">
       ${c.deadline ? `<div class="${ddayClass}">${dday<=0?'마감임박':`D-${dday}`}</div>` : ''}
       <div class="card-thumb">${c.thumbnail||'🎁'}</div>
       <div class="card-body">

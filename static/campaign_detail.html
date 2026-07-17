@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>캠페인 상세 — InfluMatch</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--navy:#1B3A2D;--green:#2D6A4F;--gold:#B7935A;--danger:#C0392B;--bg:#F7FAF8;--card:#FFFFFF;--border:#D8EDE3;--text:#111111;--muted:#777777}
+  body{font-family:'Segoe UI',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+  nav{background:var(--card);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;height:60px;gap:24px;position:sticky;top:0;z-index:100}
+  .logo{font-size:18px;font-weight:700;color:var(--navy);text-decoration:none}.logo span{color:var(--green)}
+  nav a{color:var(--muted);text-decoration:none;font-size:14px}
+  .btn-nav{margin-left:auto;background:var(--green);color:#fff!important;padding:8px 20px;border-radius:8px;font-weight:600}
+
+  .page{max-width:1000px;margin:0 auto;padding:32px 24px;flex:1;display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:start}
+
+  /* 왼쪽 메인 */
+  .main-col{}
+
+  /* 브레드크럼 */
+  .breadcrumb{font-size:13px;color:var(--muted);margin-bottom:20px;display:flex;align-items:center;gap:6px}
+  .breadcrumb a{color:var(--muted);text-decoration:none}.breadcrumb a:hover{color:var(--green)}
+  .breadcrumb span{color:var(--border)}
+
+  /* 헤더 카드 */
+  .header-card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:20px}
+  .header-thumb{height:160px;display:flex;align-items:center;justify-content:center;font-size:72px;background:linear-gradient(135deg,#E8F3ED,#F7FAF8)}
+  .header-body{padding:24px}
+  .header-tags{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .tag{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+  .tag-cat{background:#E8F3ED;color:var(--green)}
+  .tag-review{background:#EEF2FF;color:#5B4EC8}
+  .tag-experience{background:#FDF3E3;color:var(--gold)}
+  .tag-ad{background:#FEF0F0;color:var(--danger)}
+  .tag-dday{background:var(--danger);color:#fff}
+  .tag-dday-safe{background:var(--green);color:#fff}
+  .header-title{font-size:26px;font-weight:800;color:var(--text);margin-bottom:8px;line-height:1.3}
+  .header-company{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+  .company-badge{background:#E8F3ED;color:var(--green);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+
+  /* 섹션 카드 */
+  .section-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:16px}
+  .section-card h3{font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+  .section-card p{font-size:14px;color:#444;line-height:1.9}
+
+  /* 요건 목록 */
+  .req-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+  .req-list li{font-size:14px;color:#444;display:flex;align-items:flex-start;gap:8px;line-height:1.6}
+  .req-list li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0;margin-top:1px}
+
+  /* 리워드 강조 */
+  .reward-box{background:linear-gradient(135deg,#E8F3ED,#F7FAF8);border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;align-items:center;justify-content:space-between}
+  .reward-label{font-size:13px;color:var(--muted);margin-bottom:4px}
+  .reward-amount{font-size:28px;font-weight:800;color:var(--green)}
+  .reward-icon{font-size:40px}
+
+  /* 오른쪽 사이드바 */
+  .side-col{position:sticky;top:80px}
+  .apply-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:16px}
+  .apply-card h3{font-size:16px;font-weight:700;margin-bottom:16px}
+
+  .stat-rows{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+  .stat-row{display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid var(--border)}
+  .stat-row:last-child{border-bottom:none}
+  .stat-key{color:var(--muted)}.stat-val{font-weight:600;color:var(--text)}
+
+  .slot-section{margin-bottom:20px}
+  .slot-header{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+  .slot-bar{height:8px;background:#E8F3ED;border-radius:4px;overflow:hidden}
+  .slot-fill{height:100%;border-radius:4px;background:var(--green);transition:width 0.8s}
+
+  .btn-apply{width:100%;background:var(--green);color:#fff;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px}
+  .btn-apply:hover{background:var(--navy)}
+  .btn-apply:disabled{background:#ccc;cursor:not-allowed}
+  .btn-share{width:100%;background:transparent;color:var(--green);border:1px solid var(--green);padding:11px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer}
+  .btn-share:hover{background:#E8F3ED}
+
+  /* 지원 폼 (사이드바 안) */
+  .apply-form{display:none}
+  .apply-form.show{display:block}
+  .form-group{margin-bottom:12px}
+  .form-group label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:600;text-transform:uppercase}
+  .form-group input,.form-group textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-size:13px;outline:none;font-family:inherit}
+  .form-group input:focus,.form-group textarea:focus{border-color:var(--green)}
+  .btn-submit{width:100%;background:var(--green);color:#fff;border:none;padding:12px;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer}
+
+  /* 성공 */
+  .success-box{display:none;text-align:center;padding:20px;background:#E8F3ED;border-radius:10px}
+  .success-box.show{display:block}
+  .success-box h3{color:var(--green);margin-bottom:6px}
+  .success-box p{font-size:13px;color:var(--muted)}
+
+  /* 비슷한 캠페인 */
+  .similar-card{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer}
+  .similar-card:last-child{border-bottom:none}
+  .similar-card:hover .st{color:var(--green)}
+  .similar-thumb{width:44px;height:44px;border-radius:8px;background:#E8F3ED;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+  .similar-info .st{font-size:13px;font-weight:600;color:var(--text);line-height:1.4;margin-bottom:2px}
+  .similar-info .sr{font-size:11px;color:var(--green);font-weight:600}
+
+  .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite;margin:80px auto;display:block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  footer{background:#1B3A2D;padding:24px;text-align:center;font-size:12px;color:rgba(255,255,255,0.4)}
+  footer a{color:rgba(255,255,255,0.5);text-decoration:none;margin:0 8px}
+
+  @media(max-width:720px){.page{grid-template-columns:1fr}.side-col{position:static}}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="logo">InfluMatch<span>.</span></a>
+  <a href="/marketplace">인플루언서 탐색</a>
+  <a href="/campaign" style="color:var(--green);font-weight:600">체험단</a>
+  <a href="/youtube">유튜브 분석</a>
+  <a href="/pricing">요금제</a>
+  <a href="/join" class="btn-nav">무료 등록</a>
+</nav>
+
+<div class="page" id="mainPage" style="display:none">
+
+  <!-- 왼쪽 -->
+  <div class="main-col">
+    <div class="breadcrumb">
+      <a href="/">홈</a><span>›</span>
+      <a href="/campaign">체험단</a><span>›</span>
+      <span id="bcTitle">캠페인</span>
+    </div>
+
+    <!-- 헤더 -->
+    <div class="header-card">
+      <div class="header-thumb" id="dThumb">🎁</div>
+      <div class="header-body">
+        <div class="header-tags" id="dTags"></div>
+        <div class="header-title" id="dTitle">—</div>
+        <div class="header-company">
+          <span id="dCompany">—</span>
+          <span class="company-badge">✓ 인증 브랜드</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 캠페인 소개 -->
+    <div class="section-card">
+      <h3>📋 캠페인 소개</h3>
+      <p id="dDesc">—</p>
+    </div>
+
+    <!-- 지원 요건 -->
+    <div class="section-card">
+      <h3>✅ 지원 요건</h3>
+      <ul class="req-list" id="dReq"></ul>
+    </div>
+
+    <!-- 리워드 -->
+    <div class="section-card">
+      <h3>🎁 리워드</h3>
+      <div class="reward-box">
+        <div>
+          <div class="reward-label">제공 리워드</div>
+          <div class="reward-amount" id="dReward">—</div>
+        </div>
+        <div class="reward-icon" id="dRewardIcon">🎁</div>
+      </div>
+    </div>
+
+    <!-- 유의사항 -->
+    <div class="section-card">
+      <h3>📌 유의사항</h3>
+      <p style="font-size:13px;color:var(--muted);line-height:1.9">
+        · 지원 후 브랜드 검토까지 3~5일 소요될 수 있습니다.<br>
+        · 선정 후 취소 시 패널티가 부과될 수 있습니다.<br>
+        · 콘텐츠 업로드 기한을 반드시 준수해 주세요.<br>
+        · 허위 팔로워 계정은 선정에서 제외됩니다.<br>
+        · 광고 표시 의무(#광고 #협찬)를 준수해 주세요.
+      </p>
+    </div>
+  </div>
+
+  <!-- 오른쪽 사이드바 -->
+  <div class="side-col">
+
+    <!-- 지원 카드 -->
+    <div class="apply-card">
+      <h3>지원 정보</h3>
+      <div class="stat-rows">
+        <div class="stat-row"><span class="stat-key">마감일</span><span class="stat-val" id="sDeadline">—</span></div>
+        <div class="stat-row"><span class="stat-key">모집 인원</span><span class="stat-val" id="sSlots">—</span></div>
+        <div class="stat-row"><span class="stat-key">카테고리</span><span class="stat-val" id="sCat">—</span></div>
+        <div class="stat-row"><span class="stat-key">유형</span><span class="stat-val" id="sType">—</span></div>
+      </div>
+
+      <div class="slot-section">
+        <div class="slot-header">
+          <span style="font-size:13px;color:var(--muted)">지원 현황</span>
+          <span style="font-size:13px;font-weight:600" id="sApplied">0/0명</span>
+        </div>
+        <div class="slot-bar"><div class="slot-fill" id="sSlotBar" style="width:0%"></div></div>
+      </div>
+
+      <!-- 지원 버튼 / 폼 -->
+      <div id="applyBtnArea">
+        <button class="btn-apply" id="btnApply" onclick="showForm()">지원하기 🚀</button>
+        <button class="btn-share" onclick="shareLink()">🔗 공유하기</button>
+      </div>
+
+      <div class="apply-form" id="applyForm">
+        <div class="form-group">
+          <label>인스타 계정명</label>
+          <input type="text" id="aHandle" placeholder="@ 제외"/>
+        </div>
+        <div class="form-group">
+          <label>이름</label>
+          <input type="text" id="aName" placeholder="홍길동"/>
+        </div>
+        <div class="form-group">
+          <label>이메일</label>
+          <input type="email" id="aEmail" placeholder="example@email.com"/>
+        </div>
+        <div class="form-group">
+          <label>지원 메시지</label>
+          <textarea id="aMsg" rows="3" placeholder="간단한 자기소개와 지원 동기를 써주세요"></textarea>
+        </div>
+        <button class="btn-submit" onclick="submitApply()">지원 완료하기</button>
+        <button onclick="showForm(false)" style="width:100%;background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:8px;margin-top:4px">취소</button>
+      </div>
+
+      <div class="success-box" id="successBox">
+        <h3>🎉 지원 완료!</h3>
+        <p>브랜드 검토 후 이메일로 연락드려요</p>
+      </div>
+    </div>
+
+    <!-- 비슷한 캠페인 -->
+    <div class="apply-card">
+      <h3>비슷한 캠페인</h3>
+      <div id="similarList"><div style="font-size:13px;color:var(--muted)">로딩 중...</div></div>
+    </div>
+
+  </div>
+</div>
+
+<div id="loadingSpinner"><div class="spinner"></div></div>
+
+<footer>
+  © 2026 InfluMatch
+  <a href="/terms">이용약관</a>
+  <a href="/privacy">개인정보처리방침</a>
+  <a href="/contact">고객센터</a>
+</footer>
+
+<script>
+const TYPE_LBL = {review:'체험단', experience:'경험단', ad:'광고'}
+let campaign = null
+
+async function loadCampaign() {
+  const id = location.pathname.split('/campaign/')[1]
+  if(!id) { location.href='/campaign'; return }
+
+  try {
+    const data = await fetch(`/api/campaigns/${id}`).then(r=>r.json())
+    if(data.error) { location.href='/campaign'; return }
+    campaign = data
+    render(data)
+    loadSimilar(data.category, id)
+  } catch(e) {
+    location.href='/campaign'
+  }
+}
+
+function render(d) {
+  document.title = d.title + ' — InfluMatch'
+  document.getElementById('loadingSpinner').style.display = 'none'
+  document.getElementById('mainPage').style.display       = 'grid'
+
+  document.getElementById('bcTitle').textContent  = d.title
+  document.getElementById('dThumb').textContent   = d.thumbnail || '🎁'
+  document.getElementById('dTitle').textContent   = d.title
+  document.getElementById('dCompany').textContent = d.company_name || '브랜드'
+  document.getElementById('dDesc').textContent    = d.description || '—'
+
+  // 요건
+  const reqs = (d.requirements||'').split('·').map(r=>r.trim()).filter(Boolean)
+  document.getElementById('dReq').innerHTML = reqs.map(r=>`<li>${r}</li>`).join('') ||
+    '<li>별도 요건 없음</li>'
+
+  // 리워드
+  document.getElementById('dReward').textContent    = d.reward || '제품 제공'
+  document.getElementById('dRewardIcon').textContent = d.reward_amount > 0 ? '💰' : '🎁'
+
+  // 태그
+  const dday = getDday(d.deadline)
+  const ddayTag = dday <= 3
+    ? `<span class="tag tag-dday">D-${dday<=0?'day':dday}</span>`
+    : `<span class="tag tag-dday-safe">D-${dday}</span>`
+  document.getElementById('dTags').innerHTML = `
+    <span class="tag tag-cat">${d.category||'일반'}</span>
+    <span class="tag tag-${d.campaign_type||'review'}">${TYPE_LBL[d.campaign_type]||'캠페인'}</span>
+    ${d.deadline ? ddayTag : ''}
+  `
+
+  // 사이드바
+  document.getElementById('sDeadline').textContent = d.deadline || '상시 모집'
+  document.getElementById('sSlots').textContent    = (d.slots||0) + '명'
+  document.getElementById('sCat').textContent      = d.category || '일반'
+  document.getElementById('sType').textContent     = TYPE_LBL[d.campaign_type] || '캠페인'
+
+  const applied = d.applied || 0
+  const slots   = d.slots   || 1
+  const pct     = Math.min(Math.round(applied/slots*100), 100)
+  document.getElementById('sApplied').textContent  = `${applied}/${slots}명`
+  document.getElementById('sSlotBar').style.width  = pct + '%'
+
+  if(applied >= slots) {
+    document.getElementById('btnApply').disabled    = true
+    document.getElementById('btnApply').textContent = '모집 마감'
+  }
+
+  // 로그인 정보 자동
+  const handle = sessionStorage.getItem('inf_handle') || ''
+  const email  = sessionStorage.getItem('inf_email')  || ''
+  if(handle) document.getElementById('aHandle').value = handle
+  if(email)  document.getElementById('aEmail').value  = email
+}
+
+async function loadSimilar(category, currentId) {
+  try {
+    const data = await fetch(`/api/campaigns?category=${category}`).then(r=>r.json())
+    const list = (data.campaigns||[]).filter(c=>c.id!=currentId).slice(0,3)
+    document.getElementById('similarList').innerHTML = list.length
+      ? list.map(c=>`
+        <div class="similar-card" onclick="location.href='/campaign/${c.id}'">
+          <div class="similar-thumb">${c.thumbnail||'🎁'}</div>
+          <div class="similar-info">
+            <div class="st">${c.title}</div>
+            <div class="sr">${c.reward_amount>0?c.reward_amount.toLocaleString()+'원':'제품 제공'}</div>
+          </div>
+        </div>`).join('')
+      : '<div style="font-size:13px;color:var(--muted)">비슷한 캠페인이 없어요</div>'
+  } catch(e) {}
+}
+
+function showForm(show=true) {
+  document.getElementById('applyBtnArea').style.display = show ? 'none' : 'block'
+  document.getElementById('applyForm').className = show ? 'apply-form show' : 'apply-form'
+}
+
+async function submitApply() {
+  const handle = document.getElementById('aHandle').value.trim().replace('@','')
+  const name   = document.getElementById('aName').value.trim()
+  const email  = document.getElementById('aEmail').value.trim()
+  const msg    = document.getElementById('aMsg').value.trim()
+  if(!handle||!name||!email){ alert('계정명, 이름, 이메일은 필수입니다'); return }
+
+  try {
+    const res  = await fetch(`/api/campaigns/${campaign.id}/apply`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({insta_handle:handle, name, email, message:msg})
+    })
+    const data = await res.json()
+    if(data.error){ alert('오류: '+data.error); return }
+
+    document.getElementById('applyForm').className      = 'apply-form'
+    document.getElementById('applyBtnArea').style.display = 'none'
+    document.getElementById('successBox').className     = 'success-box show'
+    campaign.applied = (campaign.applied||0) + 1
+    document.getElementById('sApplied').textContent = `${campaign.applied}/${campaign.slots||0}명`
+  } catch(e){ alert('서버 오류: '+e.message) }
+}
+
+function shareLink() {
+  navigator.clipboard.writeText(location.href)
+    .then(()=>alert('링크가 복사됐어요!'))
+    .catch(()=>prompt('링크를 복사하세요:', location.href))
+}
+
+function getDday(deadline) {
+  if(!deadline) return 999
+  return Math.ceil((new Date(deadline)-new Date())/(1000*60*60*24))
+}
+
+loadCampaign()
+</script>
+</body>
+</html>
